@@ -131,7 +131,7 @@ class UserViewModel(
 
                     users = repository.getFilm()
                     setStatus(
-                        "Base de données '${dbFile.name}' chargée avec succès (${users.size} utilisateurs)",
+                        "",
                         false
                     )
                 }
