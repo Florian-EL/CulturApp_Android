@@ -12,12 +12,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import com.example.culturapp_android.data.AppDatabase
 import com.example.culturapp_android.data.Film
-import com.example.culturapp_android.data.UserRepository
+import com.example.culturapp_android.data.LibraryRepository
+import com.example.culturapp_android.data.Roman
+import com.example.culturapp_android.data.Serie
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
-class UserViewModel(
+class TypeViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
 
@@ -28,37 +31,74 @@ class UserViewModel(
             "library.db"
         ).build()
 
-    private var repository =
-        UserRepository(database.Daos())
+    private var libraryRepository =
+        LibraryRepository(database.filmdaos(), database.seriedaos(), database.romandaos())
 
-    var users by mutableStateOf<List<Film>>(emptyList())
+    var films by mutableStateOf<List<Film>>(emptyList())
+        private set
+
+    var series by mutableStateOf<List<Serie>>(emptyList())
+        private set
+
+    var romans by mutableStateOf<List<Roman>>(emptyList())
         private set
 
     var statusMessage by mutableStateOf<String?>(null)
         private set
 
+    init {
+        loadFilm()
+        loadSerie()
+        loadRoman()
+    }
+
     private fun setStatus(message: String, isError: Boolean = false) {
         statusMessage = message
         if (isError) {
-            Log.e("UserViewModel", message)
+            Log.e("TypeViewModel", message)
         } else {
-            Log.i("UserViewModel", message)
+            Log.i("TypeViewModel", message)
         }
     }
 
-    fun loadUsers() {
+    fun loadFilm() {
         viewModelScope.launch {
             try {
-                users = withContext(Dispatchers.IO) {
-                    repository.getFilm()
+                films = withContext(Dispatchers.IO) {
+                    libraryRepository.getFilm()
                 }
             } catch (e: Exception) {
-                users = emptyList()
+                films = emptyList()
                 setStatus(e.toString(), true)
             }
         }
     }
 
+    fun loadSerie() {
+        viewModelScope.launch {
+            try {
+                series = withContext(Dispatchers.IO) {
+                    libraryRepository.getSerie()
+                }
+            } catch (e: Exception) {
+                series = emptyList()
+                setStatus(e.toString(), true)
+            }
+        }
+    }
+
+    fun loadRoman() {
+        viewModelScope.launch {
+            try {
+                romans = withContext(Dispatchers.IO) {
+                    libraryRepository.getRoman()
+                }
+            } catch (e: Exception) {
+                romans = emptyList()
+                setStatus(e.toString(), true)
+            }
+        }
+    }
     fun loadDatabaseFromFolder(folderUri: Uri) {
         viewModelScope.launch {
             try {
@@ -118,6 +158,17 @@ class UserViewModel(
                                     input.copyTo(output)
                                 }
                             }
+                        } else if (name.endsWith(".jpg", ignoreCase = true) ||
+                            name.endsWith(".jpeg", ignoreCase = true) ||
+                            name.endsWith(".png", ignoreCase = true) ||
+                            name.endsWith(".webp", ignoreCase = true)
+                        ) {
+                            val imageDest = File(destFile.parentFile, name)
+                            context.contentResolver.openInputStream(file.uri)?.use { input ->
+                                imageDest.outputStream().use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
                         }
                     }
 
@@ -127,9 +178,15 @@ class UserViewModel(
                         "library.db"
                     ).fallbackToDestructiveMigration().build()
 
-                    repository = UserRepository(database.Daos())
+                    libraryRepository = LibraryRepository(
+                        database.filmdaos(),
+                        database.seriedaos(),
+                        database.romandaos()
+                    )
 
-                    users = repository.getFilm()
+                    films = libraryRepository.getFilm()
+                    series = libraryRepository.getSerie()
+                    romans = libraryRepository.getRoman()
                     setStatus(
                         "",
                         false
