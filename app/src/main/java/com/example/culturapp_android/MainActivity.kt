@@ -36,13 +36,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.culturapp_android.ui.theme.FilmScreen
+import com.example.culturapp_android.ui.theme.MangaScreen
 import com.example.culturapp_android.ui.theme.RomanScreen
 import com.example.culturapp_android.ui.theme.SerieScreen
+import com.example.culturapp_android.ui.theme.WattpadScreen
+import com.example.culturapp_android.ui.theme.WebtoonScreen
 import com.example.culturapp_android.viewmodel.TypeViewModel
 import kotlinx.coroutines.launch
 
 enum class AppScreen {
-    FILMS, SERIES, ROMAN
+    FILMS, SERIES, ROMAN, MANGA, WEBTOON, WATTPAD
 }
 
 class MainActivity : ComponentActivity() {
@@ -127,6 +130,35 @@ class MainActivity : ComponentActivity() {
                             },
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
+                        NavigationDrawerItem(
+                            label = { Text("Manga") },
+                            selected = currentScreen == AppScreen.MANGA,
+                            onClick = {
+                                currentScreen = AppScreen.MANGA
+                                scope.launch { drawerState.close() }
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+
+                        NavigationDrawerItem(
+                            label = { Text("Webtoon") },
+                            selected = currentScreen == AppScreen.WEBTOON,
+                            onClick = {
+                                currentScreen = AppScreen.WEBTOON
+                                scope.launch { drawerState.close() }
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+
+                        NavigationDrawerItem(
+                            label = { Text("Wattpad") },
+                            selected = currentScreen == AppScreen.WATTPAD,
+                            onClick = {
+                                currentScreen = AppScreen.WATTPAD
+                                scope.launch { drawerState.close() }
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
 
                     }
                 }
@@ -171,6 +203,24 @@ class MainActivity : ComponentActivity() {
                                     roman = viewModel.romans,
                                 )
                             }
+
+                            AppScreen.MANGA -> {
+                                MangaScreen(
+                                    manga = viewModel.mangas,
+                                )
+                            }
+
+                            AppScreen.WEBTOON -> {
+                                WebtoonScreen(
+                                    webtoon = viewModel.webtoon,
+                                )
+                            }
+
+                            AppScreen.WATTPAD -> {
+                                WattpadScreen(
+                                    wattpad = viewModel.wattpad,
+                                )
+                            }
                         }
                     }
                 }
@@ -180,6 +230,9 @@ class MainActivity : ComponentActivity() {
                 viewModel.loadFilm()
                 viewModel.loadSerie()
                 viewModel.loadRoman()
+                viewModel.loadManga()
+                viewModel.loadWebtoon()
+                viewModel.loadWattpad()
             }
         }
     }

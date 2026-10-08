@@ -1,0 +1,606 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "2cf37c5b2e1557cb7d5fb145c410a103",
+    "entities": [
+      {
+        "tableName": "film",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `vo` TEXT, `cinema` INTEGER, `updated` TEXT, `etat` TEXT, `annee_vu` INTEGER, `nb_vu` INTEGER, `sortie` TEXT, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre",
+            "columnName": "titre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "genre",
+            "columnName": "genre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vo",
+            "columnName": "vo",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cinema",
+            "columnName": "cinema",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "updated",
+            "columnName": "updated",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "etat",
+            "columnName": "etat",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "annee_vu",
+            "columnName": "annee_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_vu",
+            "columnName": "nb_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "sortie",
+            "columnName": "sortie",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_vu",
+            "columnName": "nb_ep_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_res",
+            "columnName": "nb_ep_res",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_tot",
+            "columnName": "nb_ep_tot",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notice",
+            "columnName": "notice",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_principal",
+            "columnName": "titre_principal",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_secondaire",
+            "columnName": "titre_secondaire",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "serie",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `vo` TEXT, `updated` TEXT, `etat` TEXT, `sortie` INTEGER, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `priorite` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, `studio` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre",
+            "columnName": "titre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "genre",
+            "columnName": "genre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vo",
+            "columnName": "vo",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "updated",
+            "columnName": "updated",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "etat",
+            "columnName": "etat",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "sortie",
+            "columnName": "sortie",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_vu",
+            "columnName": "nb_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_vu",
+            "columnName": "nb_ep_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_res",
+            "columnName": "nb_ep_res",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_tot",
+            "columnName": "nb_ep_tot",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "priorite",
+            "columnName": "priorite",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notice",
+            "columnName": "notice",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_principal",
+            "columnName": "titre_principal",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_secondaire",
+            "columnName": "titre_secondaire",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "studio",
+            "columnName": "studio",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "roman",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `possede` TEXT, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre",
+            "columnName": "titre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "auteur",
+            "columnName": "auteur",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "genre",
+            "columnName": "genre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "updated",
+            "columnName": "updated",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "etat",
+            "columnName": "etat",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_vu",
+            "columnName": "nb_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_vu",
+            "columnName": "nb_ep_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_res",
+            "columnName": "nb_ep_res",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_tot",
+            "columnName": "nb_ep_tot",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "possede",
+            "columnName": "possede",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notice",
+            "columnName": "notice",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_principal",
+            "columnName": "titre_principal",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_secondaire",
+            "columnName": "titre_secondaire",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "manga",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `vo` TEXT, `genre` TEXT, `lu_suite` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `ep_deb` INTEGER, `ep_act` INTEGER, `nb_ep_res` INTEGER, `site` TEXT, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre",
+            "columnName": "titre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "auteur",
+            "columnName": "auteur",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vo",
+            "columnName": "vo",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "genre",
+            "columnName": "genre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lu_suite",
+            "columnName": "lu_suite",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "updated",
+            "columnName": "updated",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "etat",
+            "columnName": "etat",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_vu",
+            "columnName": "nb_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ep_deb",
+            "columnName": "ep_deb",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ep_act",
+            "columnName": "ep_act",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_res",
+            "columnName": "nb_ep_res",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "site",
+            "columnName": "site",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_tot",
+            "columnName": "nb_ep_tot",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_vu",
+            "columnName": "nb_ep_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notice",
+            "columnName": "notice",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_principal",
+            "columnName": "titre_principal",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_secondaire",
+            "columnName": "titre_secondaire",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "wattpad",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre",
+            "columnName": "titre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "auteur",
+            "columnName": "auteur",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "genre",
+            "columnName": "genre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "updated",
+            "columnName": "updated",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "etat",
+            "columnName": "etat",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_vu",
+            "columnName": "nb_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_res",
+            "columnName": "nb_ep_res",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_tot",
+            "columnName": "nb_ep_tot",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nb_ep_vu",
+            "columnName": "nb_ep_vu",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notice",
+            "columnName": "notice",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_principal",
+            "columnName": "titre_principal",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "titre_secondaire",
+            "columnName": "titre_secondaire",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2cf37c5b2e1557cb7d5fb145c410a103')"
+    ]
+  }
+}

@@ -31,6 +31,10 @@ android {
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
 
     implementation(platform("androidx.compose:compose-bom:2025.12.00"))

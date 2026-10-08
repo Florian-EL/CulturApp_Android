@@ -13,8 +13,11 @@ import androidx.room.Room
 import com.example.culturapp_android.data.AppDatabase
 import com.example.culturapp_android.data.Film
 import com.example.culturapp_android.data.LibraryRepository
+import com.example.culturapp_android.data.Manga
 import com.example.culturapp_android.data.Roman
 import com.example.culturapp_android.data.Serie
+import com.example.culturapp_android.data.Wattpad
+import com.example.culturapp_android.data.Webtoon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,7 +35,14 @@ class TypeViewModel(
         ).build()
 
     private var libraryRepository =
-        LibraryRepository(database.filmdaos(), database.seriedaos(), database.romandaos())
+        LibraryRepository(
+            database.filmdaos(),
+            database.seriedaos(),
+            database.romandaos(),
+            database.mangadaos(),
+            database.webtoondaos(),
+            database.wattpaddaos(),
+        )
 
     var films by mutableStateOf<List<Film>>(emptyList())
         private set
@@ -43,6 +53,15 @@ class TypeViewModel(
     var romans by mutableStateOf<List<Roman>>(emptyList())
         private set
 
+    var mangas by mutableStateOf<List<Manga>>(emptyList())
+        private set
+
+    var webtoon by mutableStateOf<List<Webtoon>>(emptyList())
+        private set
+
+    var wattpad by mutableStateOf<List<Wattpad>>(emptyList())
+        private set
+
     var statusMessage by mutableStateOf<String?>(null)
         private set
 
@@ -50,6 +69,7 @@ class TypeViewModel(
         loadFilm()
         loadSerie()
         loadRoman()
+        loadManga()
     }
 
     private fun setStatus(message: String, isError: Boolean = false) {
@@ -95,6 +115,45 @@ class TypeViewModel(
                 }
             } catch (e: Exception) {
                 romans = emptyList()
+                setStatus(e.toString(), true)
+            }
+        }
+    }
+
+    fun loadManga() {
+        viewModelScope.launch {
+            try {
+                mangas = withContext(Dispatchers.IO) {
+                    libraryRepository.getManga()
+                }
+            } catch (e: Exception) {
+                mangas = emptyList()
+                setStatus(e.toString(), true)
+            }
+        }
+    }
+
+    fun loadWebtoon() {
+        viewModelScope.launch {
+            try {
+                webtoon = withContext(Dispatchers.IO) {
+                    libraryRepository.getWebtoon()
+                }
+            } catch (e: Exception) {
+                webtoon = emptyList()
+                setStatus(e.toString(), true)
+            }
+        }
+    }
+
+    fun loadWattpad() {
+        viewModelScope.launch {
+            try {
+                wattpad = withContext(Dispatchers.IO) {
+                    libraryRepository.getWattpad()
+                }
+            } catch (e: Exception) {
+                wattpad = emptyList()
                 setStatus(e.toString(), true)
             }
         }
@@ -181,12 +240,18 @@ class TypeViewModel(
                     libraryRepository = LibraryRepository(
                         database.filmdaos(),
                         database.seriedaos(),
-                        database.romandaos()
+                        database.romandaos(),
+                        database.mangadaos(),
+                        database.webtoondaos(),
+                        database.wattpaddaos(),
                     )
 
                     films = libraryRepository.getFilm()
                     series = libraryRepository.getSerie()
                     romans = libraryRepository.getRoman()
+                    mangas = libraryRepository.getManga()
+                    webtoon = libraryRepository.getWebtoon()
+                    wattpad = libraryRepository.getWattpad()
                     setStatus(
                         "",
                         false
