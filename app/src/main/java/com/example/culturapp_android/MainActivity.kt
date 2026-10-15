@@ -59,19 +59,30 @@ class MainActivity : ComponentActivity() {
             var currentScreen by remember { mutableStateOf(AppScreen.FILMS) }
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
             val scope = rememberCoroutineScope()
-
             val launcher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.OpenDocumentTree()
             ) { uri ->
                 uri?.let {
                     try {
+                        // The app only reads the selected database. Asking for write access too
+                        // can fail with providers that grant read-only tree access.
                         contentResolver.takePersistableUriPermission(
                             it,
                             Intent.FLAG_GRANT_READ_URI_PERMISSION
                         )
-                    } catch (_: Exception) {
+                        val permissionPersisted =
+                            contentResolver.persistedUriPermissions.any { permission ->
+                                permission.uri == it && permission.isReadPermission
+                            }
+                        if (permissionPersisted) {
+                            viewModel.loadDatabaseFromFolder(it)
+                        } else {
+                            viewModel.showError("Android n'a pas mémorisé l'accès au dossier. Sélectionnez-le à nouveau.")
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("MainActivity", "Failed to persist folder permission", e)
+                        viewModel.showError("Impossible de mémoriser l'accès au dossier : ${e.message}")
                     }
-                    viewModel.loadDatabaseFromFolder(it)
                 }
             }
 
@@ -86,9 +97,16 @@ class MainActivity : ComponentActivity() {
                         )
                         Button(
                             onClick = { launcher.launch(null) },
-                            modifier = Modifier.padding(8.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         ) {
-                            Text("Sélectionner un dossier de base de données")
+                            Text("Sélectionner un dossier")
+                        }
+
+                        Button(
+                            onClick = { viewModel.reloadDatabase() },
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        ) {
+                            Text("Rafraîchir les données")
                         }
 
                         if (!viewModel.statusMessage.isNullOrEmpty()) {
@@ -103,6 +121,11 @@ class MainActivity : ComponentActivity() {
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
+                        Spacer(
+                            modifier = Modifier
+                                .height(8.dp)
+                                .weight(1f)
+                        )
                         NavigationDrawerItem(
                             label = { Text("Films") },
                             selected = currentScreen == AppScreen.FILMS,

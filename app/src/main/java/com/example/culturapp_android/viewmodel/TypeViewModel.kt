@@ -1,6 +1,7 @@
 package com.example.culturapp_android.viewmodel
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -44,6 +45,23 @@ class TypeViewModel(
             database.wattpaddaos(),
         )
 
+    private fun reopenLocalDatabase(context: Context) {
+        database = Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "library.db"
+        ).fallbackToDestructiveMigration().build()
+
+        libraryRepository = LibraryRepository(
+            database.filmdaos(),
+            database.seriedaos(),
+            database.romandaos(),
+            database.mangadaos(),
+            database.webtoondaos(),
+            database.wattpaddaos(),
+        )
+    }
+
     var films by mutableStateOf<List<Film>>(emptyList())
         private set
 
@@ -66,10 +84,35 @@ class TypeViewModel(
         private set
 
     init {
+        refreshSavedFolderOnStartup()
+    }
+
+    private fun refreshSavedFolderOnStartup() {
+        val context = getApplication<Application>()
+        val prefs = context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
+        val savedUriStr = prefs.getString("saved_db_folder_uri", null)
+        if (!savedUriStr.isNullOrEmpty()) {
+            try {
+                loadDatabaseFromFolder(Uri.parse(savedUriStr))
+            } catch (e: Exception) {
+                loadAll()
+            }
+        } else {
+            loadAll()
+        }
+    }
+
+    fun showError(message: String) {
+        setStatus(message, true)
+    }
+
+    fun loadAll() {
         loadFilm()
         loadSerie()
         loadRoman()
         loadManga()
+        loadWebtoon()
+        loadWattpad()
     }
 
     private fun setStatus(message: String, isError: Boolean = false) {
@@ -85,7 +128,9 @@ class TypeViewModel(
         viewModelScope.launch {
             try {
                 films = withContext(Dispatchers.IO) {
-                    libraryRepository.getFilm()
+                    val list = libraryRepository.getFilm()
+                    Log.i("TypeViewModel", "Loaded films count: ${list.size}")
+                    list
                 }
             } catch (e: Exception) {
                 films = emptyList()
@@ -160,18 +205,24 @@ class TypeViewModel(
     }
     fun loadDatabaseFromFolder(folderUri: Uri) {
         viewModelScope.launch {
+            var databaseClosed = false
             try {
+                var errorMessage: String? = null
                 withContext(Dispatchers.IO) {
                     val context = getApplication<Application>()
                     val documentDir = DocumentFile.fromTreeUri(context, folderUri)
                     if ((documentDir == null) || !documentDir.isDirectory) {
-                        setStatus("Dossier sélectionné invalide", true)
+                        val prefs =
+                            context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
+                        prefs.edit().remove("saved_db_folder_uri").apply()
+                        errorMessage =
+                            "Permission ou accès au dossier perdu. Veuillez le re-sélectionner."
                         return@withContext
                     }
 
                     val files = documentDir.listFiles()
                     if (files == null) {
-                        setStatus("Erreur : Impossible de lister les fichiers du dossier", true)
+                        errorMessage = "Erreur : Impossible de lister les fichiers du dossier"
                         return@withContext
                     }
 
@@ -184,40 +235,49 @@ class TypeViewModel(
                     }
 
                     if (dbFile == null) {
-                        setStatus(
-                            "Aucun fichier de base de données (.db ou .sqlite) trouvé dans le dossier",
-                            true
-                        )
+                        errorMessage =
+                            "Aucun fichier de base de données (.db ou .sqlite) trouvé dans le dossier"
                         return@withContext
-                    }
-
-                    try {
-                        database.close()
-                    } catch (_: Exception) {
                     }
 
                     val destFile = context.getDatabasePath("library.db")
                     destFile.parentFile?.mkdirs()
+                    val dbFileName = dbFile.name ?: "library.db"
+                    val sourceWal = files.firstOrNull { it.name == "$dbFileName-wal" }
+                    val stagedDb = File(context.cacheDir, "library-import.db")
+                    val stagedWal = File(context.cacheDir, "library-import.db-wal")
+                    stagedDb.delete()
+                    stagedWal.delete()
 
                     context.contentResolver.openInputStream(dbFile.uri)?.use { input ->
-                        destFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
+                        stagedDb.outputStream().use { output -> input.copyTo(output) }
+                    } ?: throw IllegalStateException("Impossible d'ouvrir le flux pour $dbFileName")
+                    if (stagedDb.length() == 0L) {
+                        throw IllegalStateException("Le fichier $dbFileName est vide")
                     }
-                        ?: throw IllegalStateException("Impossible d'ouvrir le flux pour ${dbFile.name}")
+                    if (sourceWal != null) {
+                        context.contentResolver.openInputStream(sourceWal.uri)?.use { input ->
+                            stagedWal.outputStream().use { output -> input.copyTo(output) }
+                        }
+                            ?: throw IllegalStateException("Impossible de lire le journal de $dbFileName")
+                    }
 
-                    val dbFileName = dbFile.name ?: "library.db"
+                    // Un fichier SHM est un index temporaire propre à la connexion SQLite ;
+                    // il doit être recréé par SQLite, jamais importé depuis le dossier source.
+                    database.close()
+                    databaseClosed = true
+                    val localWal = File(destFile.parentFile, "library.db-wal")
+                    val localShm = File(destFile.parentFile, "library.db-shm")
+                    val localJournal = File(destFile.parentFile, "library.db-journal")
+                    localWal.delete()
+                    localShm.delete()
+                    localJournal.delete()
+                    stagedDb.copyTo(destFile, overwrite = true)
+                    if (sourceWal != null) stagedWal.copyTo(localWal, overwrite = true)
+
                     files.forEach { file ->
                         val name = file.name ?: ""
-                        if (name.startsWith(dbFileName) && (name.endsWith("-wal") || name.endsWith("-shm"))) {
-                            val suffix = name.removePrefix(dbFileName)
-                            val walDest = context.getDatabasePath("library.db$suffix")
-                            context.contentResolver.openInputStream(file.uri)?.use { input ->
-                                walDest.outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                        } else if (name.endsWith(".jpg", ignoreCase = true) ||
+                        if (name.endsWith(".jpg", ignoreCase = true) ||
                             name.endsWith(".jpeg", ignoreCase = true) ||
                             name.endsWith(".png", ignoreCase = true) ||
                             name.endsWith(".webp", ignoreCase = true)
@@ -230,36 +290,59 @@ class TypeViewModel(
                             }
                         }
                     }
+                    reopenLocalDatabase(context)
+                    databaseClosed = false
+                    stagedDb.delete()
+                    stagedWal.delete()
+                }
 
-                    database = Room.databaseBuilder(
-                        context,
-                        AppDatabase::class.java,
-                        "library.db"
-                    ).fallbackToDestructiveMigration().build()
+                if (errorMessage != null) {
+                    setStatus(errorMessage, true)
+                } else {
+                    val context = getApplication<Application>()
+                    val prefs =
+                        context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
+                    prefs.edit().putString("saved_db_folder_uri", folderUri.toString()).apply()
 
-                    libraryRepository = LibraryRepository(
-                        database.filmdaos(),
-                        database.seriedaos(),
-                        database.romandaos(),
-                        database.mangadaos(),
-                        database.webtoondaos(),
-                        database.wattpaddaos(),
-                    )
-
-                    films = libraryRepository.getFilm()
-                    series = libraryRepository.getSerie()
-                    romans = libraryRepository.getRoman()
-                    mangas = libraryRepository.getManga()
-                    webtoon = libraryRepository.getWebtoon()
-                    wattpad = libraryRepository.getWattpad()
-                    setStatus(
-                        "",
-                        false
-                    )
+                    setStatus("Données actualisées depuis le dossier sélectionné.", false)
+                    loadAll()
                 }
             } catch (e: Exception) {
+                if (databaseClosed) {
+                    try {
+                        reopenLocalDatabase(getApplication())
+                    } catch (reopenError: Exception) {
+                        Log.e("TypeViewModel", "Unable to reopen local database", reopenError)
+                    }
+                }
+                if (e is SecurityException) {
+                    val context = getApplication<Application>()
+                    context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
+                        .edit().remove("saved_db_folder_uri").apply()
+                    setStatus(
+                        "L'accès Android au dossier a expiré. Sélectionnez-le à nouveau pour le mémoriser.",
+                        true
+                    )
+                    return@launch
+                }
                 setStatus("Erreur lors du chargement : ${e.toString()}", true)
             }
+        }
+    }
+
+    fun reloadDatabase() {
+        val context = getApplication<Application>()
+        val prefs = context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
+        val savedUriStr = prefs.getString("saved_db_folder_uri", null)
+        if (!savedUriStr.isNullOrEmpty()) {
+            try {
+                loadDatabaseFromFolder(Uri.parse(savedUriStr))
+            } catch (e: Exception) {
+                setStatus("Erreur lors du rafraîchissement : ${e.message}", true)
+            }
+        } else {
+            setStatus("Aucun dossier de base de données enregistré", true)
+            loadAll()
         }
     }
 }
