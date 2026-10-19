@@ -6,14 +6,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -26,14 +30,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.culturapp_android.ui.theme.FilmScreen
 import com.example.culturapp_android.ui.theme.MangaScreen
@@ -56,6 +64,20 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val viewModel: TypeViewModel = viewModel()
+            val lifecycleOwner = LocalLifecycleOwner.current
+
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        viewModel.refresh()
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
+            }
+
             var currentScreen by remember { mutableStateOf(AppScreen.FILMS) }
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
             val scope = rememberCoroutineScope()
@@ -64,25 +86,14 @@ class MainActivity : ComponentActivity() {
             ) { uri ->
                 uri?.let {
                     try {
-                        // The app only reads the selected database. Asking for write access too
-                        // can fail with providers that grant read-only tree access.
                         contentResolver.takePersistableUriPermission(
                             it,
                             Intent.FLAG_GRANT_READ_URI_PERMISSION
                         )
-                        val permissionPersisted =
-                            contentResolver.persistedUriPermissions.any { permission ->
-                                permission.uri == it && permission.isReadPermission
-                            }
-                        if (permissionPersisted) {
-                            viewModel.loadDatabaseFromFolder(it)
-                        } else {
-                            viewModel.showError("Android n'a pas mémorisé l'accès au dossier. Sélectionnez-le à nouveau.")
-                        }
                     } catch (e: Exception) {
                         android.util.Log.e("MainActivity", "Failed to persist folder permission", e)
-                        viewModel.showError("Impossible de mémoriser l'accès au dossier : ${e.message}")
                     }
+                    viewModel.loadDatabaseFromFolder(it)
                 }
             }
 
@@ -103,7 +114,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         Button(
-                            onClick = { viewModel.reloadDatabase() },
+                            onClick = { viewModel.refresh() },
                             modifier = Modifier.padding(horizontal = 8.dp)
                         ) {
                             Text("Rafraîchir les données")
@@ -121,11 +132,7 @@ class MainActivity : ComponentActivity() {
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        Spacer(
-                            modifier = Modifier
-                                .height(8.dp)
-                                .weight(1f)
-                        )
+
                         NavigationDrawerItem(
                             label = { Text("Films") },
                             selected = currentScreen == AppScreen.FILMS,
@@ -189,7 +196,20 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         TopAppBar(
-                            title = { Text("CulturApp") },
+                            title = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Text("CulturApp")
+                                    if (viewModel.isLoading) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
+                                }
+                            },
                             navigationIcon = {
                                 IconButton(onClick = {
                                     scope.launch {
@@ -209,53 +229,15 @@ class MainActivity : ComponentActivity() {
                         .padding(innerPadding)
                         .fillMaxSize()) {
                         when (currentScreen) {
-                            AppScreen.FILMS -> {
-                                FilmScreen(
-                                    film = viewModel.films,
-                                )
-                            }
-
-                            AppScreen.SERIES -> {
-                                SerieScreen(
-                                    serie = viewModel.series,
-                                )
-                            }
-
-                            AppScreen.ROMAN -> {
-                                RomanScreen(
-                                    roman = viewModel.romans,
-                                )
-                            }
-
-                            AppScreen.MANGA -> {
-                                MangaScreen(
-                                    manga = viewModel.mangas,
-                                )
-                            }
-
-                            AppScreen.WEBTOON -> {
-                                WebtoonScreen(
-                                    webtoon = viewModel.webtoon,
-                                )
-                            }
-
-                            AppScreen.WATTPAD -> {
-                                WattpadScreen(
-                                    wattpad = viewModel.wattpad,
-                                )
-                            }
+                            AppScreen.FILMS -> FilmScreen(film = viewModel.films)
+                            AppScreen.SERIES -> SerieScreen(serie = viewModel.series)
+                            AppScreen.ROMAN -> RomanScreen(roman = viewModel.romans)
+                            AppScreen.MANGA -> MangaScreen(manga = viewModel.mangas)
+                            AppScreen.WEBTOON -> WebtoonScreen(webtoon = viewModel.webtoon)
+                            AppScreen.WATTPAD -> WattpadScreen(wattpad = viewModel.wattpad)
                         }
                     }
                 }
-            }
-
-            LaunchedEffect(Unit) {
-                viewModel.loadFilm()
-                viewModel.loadSerie()
-                viewModel.loadRoman()
-                viewModel.loadManga()
-                viewModel.loadWebtoon()
-                viewModel.loadWattpad()
             }
         }
     }
