@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,8 +47,12 @@ enum class MangaSortOption(val label: String) {
 @Composable
 fun MangaScreen(
     manga: List<Manga>,
+    onSaveManga: ((Manga) -> Unit)? = null,
+    onDeleteManga: ((Manga) -> Unit)? = null
 ) {
     var selectedManga by remember { mutableStateOf<Manga?>(null) }
+    var editingManga by remember { mutableStateOf<Manga?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
     var sortOption by remember { mutableStateOf(MangaSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -65,104 +71,156 @@ fun MangaScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text(
-                text = "Manga (${manga.size})",
-                style = MaterialTheme.typography.headlineSmall
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Manga (${manga.size})",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                Box {
+                    OutlinedButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Trier")
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        MangaSortOption.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label) },
+                                onClick = {
+                                    sortOption = option
+                                    menuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
             )
 
-            Box {
-                OutlinedButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Trier")
-                }
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    MangaSortOption.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option.label) },
-                            onClick = {
-                                sortOption = option
-                                menuExpanded = false
-                            }
-                        )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(sortedManga) { mangaItem ->
+                    val coverFile = remember(
+                        mangaItem.id,
+                        mangaItem.titre,
+                        mangaItem.titre_principal,
+                        mangaItem.titre_secondaire
+                    ) {
+                        getCoverImageFile(context, mangaItem.id, mangaItem.titre, "manga")
                     }
+                    MediaCard(
+                        title = mangaItem.titre_principal,
+                        secondtitre = mangaItem.titre_secondaire,
+                        note = mangaItem.note,
+                        nbEpVu = mangaItem.nb_ep_vu,
+                        nbEpTot = mangaItem.nb_ep_tot,
+                        coverFile = coverFile,
+                        onClick = { selectedManga = mangaItem }
+                    )
                 }
             }
         }
 
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(sortedManga) { manga ->
-                val coverFile = remember(manga.id, manga.titre) {
-                    getCoverImageFile(context, manga.id, manga.titre, "manga")
-                }
-                MediaCard(
-                    title = manga.titre_principal,
-                    secondtitre = manga.titre_secondaire,
-                    note = manga.note,
-                    nbEpVu = manga.nb_ep_vu,
-                    nbEpTot = manga.nb_ep_tot,
-                    coverFile = coverFile,
-                    onClick = { selectedManga = manga }
-                )
+        if (onSaveManga != null) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Ajouter un manga")
             }
         }
     }
 
-    selectedManga?.let { manga ->
-        val coverFile = getCoverImageFile(context, manga.id, manga.titre, "manga")
+    if (showAddDialog && onSaveManga != null) {
+        AddEditMangaDialog(
+            manga = null,
+            onDismiss = { showAddDialog = false },
+            onSave = { newManga ->
+                onSaveManga(newManga)
+                showAddDialog = false
+            }
+        )
+    }
+
+    editingManga?.let { mangaToEdit ->
+        if (onSaveManga != null) {
+            AddEditMangaDialog(
+                manga = mangaToEdit,
+                onDismiss = { editingManga = null },
+                onSave = { updatedManga ->
+                    onSaveManga(updatedManga)
+                    editingManga = null
+                    selectedManga = null
+                }
+            )
+        }
+    }
+
+    selectedManga?.let { mangaItem ->
+        val coverFile = getCoverImageFile(context, mangaItem.id, mangaItem.titre, "manga")
         val details = listOf(
-            "Titre" to manga.titre,
-            "Note" to (manga.note?.let { "$it/20" }),
-            "Type" to manga.type,
-            "Genre" to manga.genre,
-            "Auteur" to manga.auteur,
-            "État" to manga.etat,
-            "Lu Suite" to manga.lu_suite,
-            "Nb vu" to manga.nb_vu?.toString(),
-            "Site" to manga.site,
-            "Épisodes début" to manga.ep_deb?.toString(),
-            "Épisodes actuel" to manga.ep_act?.toString(),
-            "Épisodes restants" to manga.nb_ep_res?.toString(),
-            "Total épisodes" to manga.nb_ep_tot?.toString(),
-            "Mis à jour" to manga.updated,
-            "Notice" to manga.notice
+            "Titre" to mangaItem.titre,
+            "Note" to (mangaItem.note?.takeIf { it > 0 }?.let { "$it/20" }),
+            "Type" to mangaItem.type,
+            "Genre" to mangaItem.genre,
+            "Auteur" to mangaItem.auteur,
+            "État" to mangaItem.etat,
+            "Lu Suite" to mangaItem.lu_suite,
+            "Nb vu" to mangaItem.nb_vu?.takeIf { it > 0 }?.toString(),
+            "Site" to mangaItem.site,
+            "Épisodes début" to mangaItem.ep_deb?.toString(),
+            "Épisodes actuel" to mangaItem.ep_act?.toString(),
+            "Épisodes restants" to mangaItem.nb_ep_res?.toString(),
+            "Total épisodes" to mangaItem.nb_ep_tot?.toString(),
+            "Mis à jour" to mangaItem.updated,
+            "Notice" to mangaItem.notice
         )
         DetailDialog(
-            title = manga.titre ?: "Détails du manga",
+            title = mangaItem.titre ?: "Détails du manga",
             details = details,
             coverFile = coverFile,
-            onDismiss = { selectedManga = null }
+            onDismiss = { selectedManga = null },
+            onEdit = if (onSaveManga != null) {
+                { editingManga = mangaItem }
+            } else null,
+            onDelete = if (onDeleteManga != null) {
+                {
+                    onDeleteManga(mangaItem)
+                    selectedManga = null
+                }
+            } else null
         )
     }
 }

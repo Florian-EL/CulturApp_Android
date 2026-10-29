@@ -6,8 +6,8 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "film")
 data class Film(
 
-    @PrimaryKey
-    val id: Int?,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int? = null,
 
     val titre: String?,
 

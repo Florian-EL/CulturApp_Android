@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "3c666b1af065addb9f19f5f43bf77df8",
+    "identityHash": "5a744dcc6d26bdb758f278efdaab848b",
     "entities": [
       {
         "tableName": "film",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `vo` TEXT, `cinema` INTEGER, `updated` TEXT, `etat` TEXT, `annee_vu` INTEGER, `nb_vu` INTEGER, `sortie` TEXT, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `vo` TEXT, `cinema` INTEGER, `updated` TEXT, `etat` TEXT, `annee_vu` INTEGER, `nb_vu` INTEGER, `sortie` TEXT, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -118,7 +118,7 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": false,
+          "autoGenerate": true,
           "columnNames": [
             "id"
           ]
@@ -128,7 +128,7 @@
       },
       {
         "tableName": "serie",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `vo` TEXT, `updated` TEXT, `etat` TEXT, `sortie` INTEGER, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `priorite` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, `studio` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `vo` TEXT, `updated` TEXT, `etat` TEXT, `sortie` INTEGER, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `priorite` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, `studio` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -240,7 +240,7 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": false,
+          "autoGenerate": true,
           "columnNames": [
             "id"
           ]
@@ -250,7 +250,7 @@
       },
       {
         "tableName": "roman",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `possede` TEXT, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `possede` TEXT, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -350,7 +350,7 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": false,
+          "autoGenerate": true,
           "columnNames": [
             "id"
           ]
@@ -360,7 +360,7 @@
       },
       {
         "tableName": "manga",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `vo` TEXT, `genre` TEXT, `lu_suite` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `ep_deb` INTEGER, `ep_act` INTEGER, `nb_ep_res` INTEGER, `site` TEXT, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `vo` TEXT, `genre` TEXT, `lu_suite` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `ep_deb` INTEGER, `ep_act` INTEGER, `nb_ep_res` INTEGER, `site` TEXT, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -484,7 +484,7 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": false,
+          "autoGenerate": true,
           "columnNames": [
             "id"
           ]
@@ -494,7 +494,7 @@
       },
       {
         "tableName": "webtoon",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -588,7 +588,7 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": false,
+          "autoGenerate": true,
           "columnNames": [
             "id"
           ]
@@ -598,7 +598,7 @@
       },
       {
         "tableName": "wattpad",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -692,7 +692,7 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": false,
+          "autoGenerate": true,
           "columnNames": [
             "id"
           ]
@@ -704,7 +704,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3c666b1af065addb9f19f5f43bf77df8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5a744dcc6d26bdb758f278efdaab848b')"
     ]
   }
 }

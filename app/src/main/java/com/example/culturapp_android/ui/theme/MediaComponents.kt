@@ -1,6 +1,7 @@
 package com.example.culturapp_android.ui.theme
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,27 +49,75 @@ import java.io.File
 
 fun getCoverImageFile(context: Context, id: Int?, titre: String?, dataType: String?): File? {
     val dbFile = context.getDatabasePath("library.db")
-    val dbDir = dbFile.parentFile ?: return null
+    val dbDir = dbFile.parentFile
+    Log.d("CoverDebug", "dbFile: $dbFile, dbDir: $dbDir")
+    if (dbDir == null || !dbDir.exists()) {
+        Log.d("CoverDebug", "dbDir is null or does not exist for library.db")
+        return null
+    }
+
     val extensions = listOf("jpg", "jpeg", "png", "webp", "JPG", "JPEG", "PNG", "WEBP")
+    val allFiles = dbDir.list()?.toList() ?: emptyList()
+    Log.d(
+        "CoverDebug",
+        "In $dbDir Searching cover for id=$id, titre=$titre, dataType=$dataType in dir=${dbDir.absolutePath} (Files count: ${allFiles.size})"
+    )
 
     if (id != null) {
         for (ext in extensions) {
             val file = File(dbDir, "$id.$ext")
-            if (file.exists() && file.isFile) return file
+            if (file.exists() && file.isFile) {
+                Log.d("CoverDebug", "Found cover by ID: ${file.absolutePath}")
+                return file
+            }
         }
     }
+
     if (!titre.isNullOrBlank()) {
         val safeTitle = titre.replace(Regex(":"), "_")
         val imageName = "${safeTitle}_${dataType}"
+
+        Log.d("CoverDebug", "Trying image name with dataType: $imageName")
         for (ext in extensions) {
             val file = File(dbDir, "$imageName.$ext")
-            if (file.exists() && file.isFile) return file
+            if (file.exists() && file.isFile) {
+                Log.d("CoverDebug", "Found cover by titre_dataType: ${file.absolutePath}")
+                return file
+            }
         }
+
+        Log.d("CoverDebug", "Trying exact titre: $titre")
         for (ext in extensions) {
             val file = File(dbDir, "$titre.$ext")
-            if (file.exists() && file.isFile) return file
+            if (file.exists() && file.isFile) {
+                Log.d("CoverDebug", "Found cover by titre alone: ${file.absolutePath}")
+                return file
+            }
+        }
+
+        // Case-insensitive fallback check across files in dbDir
+        val matchedFile = dbDir.listFiles()?.find { f ->
+            val nameNoExt = f.nameWithoutExtension
+            val ext = f.extension
+            extensions.contains(ext) && (
+                    nameNoExt.equals(imageName, ignoreCase = true) ||
+                            nameNoExt.equals(titre, ignoreCase = true) ||
+                            nameNoExt.equals(safeTitle, ignoreCase = true)
+                    )
+        }
+        if (matchedFile != null) {
+            Log.d(
+                "CoverDebug",
+                "Found cover by case-insensitive fallback: ${matchedFile.absolutePath}"
+            )
+            return matchedFile
         }
     }
+
+    Log.d(
+        "CoverDebug",
+        "Cover NOT found for id=$id, titre=$titre, dataType=$dataType. Available files in dir: $allFiles"
+    )
     return null
 }
 
@@ -178,21 +227,40 @@ fun MediaCard(
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            StarRating(note = note)
-
-            Text(
-                text = "${note ?: 0}/20",
-                style = MaterialTheme.typography.labelSmall
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(30.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (note != null && note > 0) {
+                    Column {
+                        StarRating(note = note)
+                        Text(
+                            text = "$note/20",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            Text(
-                text = "Ép: ${nbEpVu ?: 0} / ${nbEpTot ?: 0}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 9.sp
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(18.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (nbEpVu != null || nbEpTot != null) {
+                    Text(
+                        text = "Ép: ${nbEpVu ?: "-"} / ${nbEpTot ?: "-"}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 9.sp
+                    )
+                }
+            }
         }
     }
 }
@@ -202,7 +270,9 @@ fun DetailDialog(
     title: String,
     details: List<Pair<String, String?>>,
     coverFile: File?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onEdit: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     Dialog(onDismissRequest = onDismiss) {
@@ -231,8 +301,20 @@ fun DetailDialog(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = onDismiss) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Fermer")
+                    Row {
+                        if (onEdit != null) {
+                            androidx.compose.material3.TextButton(onClick = onEdit) {
+                                Text("Éditer")
+                            }
+                        }
+                        if (onDelete != null) {
+                            androidx.compose.material3.TextButton(onClick = onDelete) {
+                                Text("Supprimer", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(imageVector = Icons.Default.Close, contentDescription = "Fermer")
+                        }
                     }
                 }
 
@@ -278,7 +360,13 @@ fun DetailDialog(
                         }
                     }
 
-                    items(details.filter { !it.second.isNullOrBlank() }) { (label, value) ->
+                    items(details.filter {
+                        val valStr = (it.second ?: "").trim()
+                        valStr.isNotEmpty() &&
+                                !valStr.equals("None", ignoreCase = true) &&
+                                !valStr.equals("null", ignoreCase = true) &&
+                                valStr != "0/20"
+                    }) { (label, value) ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween

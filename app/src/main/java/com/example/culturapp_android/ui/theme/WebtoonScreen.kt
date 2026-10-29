@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,8 +47,12 @@ enum class WebtoonSortOption(val label: String) {
 @Composable
 fun WebtoonScreen(
     webtoon: List<Webtoon>,
+    onSaveWebtoon: ((Webtoon) -> Unit)? = null,
+    onDeleteWebtoon: ((Webtoon) -> Unit)? = null
 ) {
     var selectedWebtoon by remember { mutableStateOf<Webtoon?>(null) }
+    var editingWebtoon by remember { mutableStateOf<Webtoon?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
     var sortOption by remember { mutableStateOf(WebtoonSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -65,100 +71,152 @@ fun WebtoonScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text(
-                text = "Webtoon (${webtoon.size})",
-                style = MaterialTheme.typography.headlineSmall
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Webtoon (${webtoon.size})",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                Box {
+                    OutlinedButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Trier")
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        WebtoonSortOption.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label) },
+                                onClick = {
+                                    sortOption = option
+                                    menuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
             )
 
-            Box {
-                OutlinedButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Trier")
-                }
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    WebtoonSortOption.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option.label) },
-                            onClick = {
-                                sortOption = option
-                                menuExpanded = false
-                            }
-                        )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(sortedWebtoon) { webtoonItem ->
+                    val coverFile = remember(
+                        webtoonItem.id,
+                        webtoonItem.titre,
+                        webtoonItem.titre_principal,
+                        webtoonItem.titre_secondaire
+                    ) {
+                        getCoverImageFile(context, webtoonItem.id, webtoonItem.titre, "webtoon")
                     }
+                    MediaCard(
+                        title = webtoonItem.titre_principal,
+                        secondtitre = webtoonItem.titre_secondaire,
+                        note = webtoonItem.note,
+                        nbEpVu = webtoonItem.nb_ep_vu,
+                        nbEpTot = webtoonItem.nb_ep_tot,
+                        coverFile = coverFile,
+                        onClick = { selectedWebtoon = webtoonItem }
+                    )
                 }
             }
         }
 
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(sortedWebtoon) { webtoon ->
-                val coverFile = remember(webtoon.id, webtoon.titre) {
-                    getCoverImageFile(context, webtoon.id, webtoon.titre, "webtoon")
-                }
-                MediaCard(
-                    title = webtoon.titre_principal,
-                    secondtitre = webtoon.titre_secondaire,
-                    note = webtoon.note,
-                    nbEpVu = webtoon.nb_ep_vu,
-                    nbEpTot = webtoon.nb_ep_tot,
-                    coverFile = coverFile,
-                    onClick = { selectedWebtoon = webtoon }
-                )
+        if (onSaveWebtoon != null) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Ajouter un webtoon")
             }
         }
     }
 
-    selectedWebtoon?.let { webtoon ->
-        val coverFile = getCoverImageFile(context, webtoon.id, webtoon.titre, "webtoon")
+    if (showAddDialog && onSaveWebtoon != null) {
+        AddEditWebtoonDialog(
+            webtoon = null,
+            onDismiss = { showAddDialog = false },
+            onSave = { newWebtoon ->
+                onSaveWebtoon(newWebtoon)
+                showAddDialog = false
+            }
+        )
+    }
+
+    editingWebtoon?.let { webtoonToEdit ->
+        if (onSaveWebtoon != null) {
+            AddEditWebtoonDialog(
+                webtoon = webtoonToEdit,
+                onDismiss = { editingWebtoon = null },
+                onSave = { updatedWebtoon ->
+                    onSaveWebtoon(updatedWebtoon)
+                    editingWebtoon = null
+                    selectedWebtoon = null
+                }
+            )
+        }
+    }
+
+    selectedWebtoon?.let { webtoonItem ->
+        val coverFile = getCoverImageFile(context, webtoonItem.id, webtoonItem.titre, "webtoon")
         val details = listOf(
-            "Titre" to webtoon.titre,
-            "Note" to (webtoon.note?.let { "$it/20" }),
-            "Type" to webtoon.type,
-            "Genre" to webtoon.genre,
-            "Auteur" to webtoon.auteur,
-            "État" to webtoon.etat,
-            "Nb vu" to webtoon.nb_vu?.toString(),
-            "Épisodes restants" to webtoon.nb_ep_res?.toString(),
-            "Total épisodes" to webtoon.nb_ep_tot?.toString(),
-            "Mis à jour" to webtoon.updated,
-            "Notice" to webtoon.notice
+            "Titre" to webtoonItem.titre,
+            "Note" to (webtoonItem.note?.takeIf { it > 0 }?.let { "$it/20" }),
+            "Type" to webtoonItem.type,
+            "Genre" to webtoonItem.genre,
+            "Auteur" to webtoonItem.auteur,
+            "État" to webtoonItem.etat,
+            "Nb vu" to webtoonItem.nb_vu?.takeIf { it > 0 }?.toString(),
+            "Épisodes restants" to webtoonItem.nb_ep_res?.toString(),
+            "Total épisodes" to webtoonItem.nb_ep_tot?.toString(),
+            "Mis à jour" to webtoonItem.updated,
+            "Notice" to webtoonItem.notice
         )
         DetailDialog(
-            title = webtoon.titre ?: "Détails du webtoon",
+            title = webtoonItem.titre ?: "Détails du webtoon",
             details = details,
             coverFile = coverFile,
-            onDismiss = { selectedWebtoon = null }
+            onDismiss = { selectedWebtoon = null },
+            onEdit = if (onSaveWebtoon != null) {
+                { editingWebtoon = webtoonItem }
+            } else null,
+            onDelete = if (onDeleteWebtoon != null) {
+                {
+                    onDeleteWebtoon(webtoonItem)
+                    selectedWebtoon = null
+                }
+            } else null
         )
     }
 }

@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,8 +47,12 @@ enum class WattpadSortOption(val label: String) {
 @Composable
 fun WattpadScreen(
     wattpad: List<Wattpad>,
+    onSaveWattpad: ((Wattpad) -> Unit)? = null,
+    onDeleteWattpad: ((Wattpad) -> Unit)? = null
 ) {
     var selectedWattpad by remember { mutableStateOf<Wattpad?>(null) }
+    var editingWattpad by remember { mutableStateOf<Wattpad?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
     var sortOption by remember { mutableStateOf(WattpadSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -65,100 +71,152 @@ fun WattpadScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text(
-                text = "Wattpad (${wattpad.size})",
-                style = MaterialTheme.typography.headlineSmall
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Wattpad (${wattpad.size})",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                Box {
+                    OutlinedButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Trier")
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        WattpadSortOption.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label) },
+                                onClick = {
+                                    sortOption = option
+                                    menuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
             )
 
-            Box {
-                OutlinedButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Trier")
-                }
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    WattpadSortOption.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option.label) },
-                            onClick = {
-                                sortOption = option
-                                menuExpanded = false
-                            }
-                        )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(sortedWattpad) { wattpadItem ->
+                    val coverFile = remember(
+                        wattpadItem.id,
+                        wattpadItem.titre,
+                        wattpadItem.titre_principal,
+                        wattpadItem.titre_secondaire
+                    ) {
+                        getCoverImageFile(context, wattpadItem.id, wattpadItem.titre, "wattpad")
                     }
+                    MediaCard(
+                        title = wattpadItem.titre_principal,
+                        secondtitre = wattpadItem.titre_secondaire,
+                        note = wattpadItem.note,
+                        nbEpVu = wattpadItem.nb_ep_vu,
+                        nbEpTot = wattpadItem.nb_ep_tot,
+                        coverFile = coverFile,
+                        onClick = { selectedWattpad = wattpadItem }
+                    )
                 }
             }
         }
 
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(sortedWattpad) { wattpad ->
-                val coverFile = remember(wattpad.id, wattpad.titre) {
-                    getCoverImageFile(context, wattpad.id, wattpad.titre, "wattpad")
-                }
-                MediaCard(
-                    title = wattpad.titre_principal,
-                    secondtitre = wattpad.titre_secondaire,
-                    note = wattpad.note,
-                    nbEpVu = wattpad.nb_ep_vu,
-                    nbEpTot = wattpad.nb_ep_tot,
-                    coverFile = coverFile,
-                    onClick = { selectedWattpad = wattpad }
-                )
+        if (onSaveWattpad != null) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Ajouter sur Wattpad")
             }
         }
     }
 
-    selectedWattpad?.let { wattpad ->
-        val coverFile = getCoverImageFile(context, wattpad.id, wattpad.titre, "wattpad")
+    if (showAddDialog && onSaveWattpad != null) {
+        AddEditWattpadDialog(
+            wattpad = null,
+            onDismiss = { showAddDialog = false },
+            onSave = { newWattpad ->
+                onSaveWattpad(newWattpad)
+                showAddDialog = false
+            }
+        )
+    }
+
+    editingWattpad?.let { wattpadToEdit ->
+        if (onSaveWattpad != null) {
+            AddEditWattpadDialog(
+                wattpad = wattpadToEdit,
+                onDismiss = { editingWattpad = null },
+                onSave = { updatedWattpad ->
+                    onSaveWattpad(updatedWattpad)
+                    editingWattpad = null
+                    selectedWattpad = null
+                }
+            )
+        }
+    }
+
+    selectedWattpad?.let { wattpadItem ->
+        val coverFile = getCoverImageFile(context, wattpadItem.id, wattpadItem.titre, "wattpad")
         val details = listOf(
-            "Titre" to wattpad.titre,
-            "Note" to (wattpad.note?.let { "$it/20" }),
-            "Type" to wattpad.type,
-            "Genre" to wattpad.genre,
-            "Auteur" to wattpad.auteur,
-            "État" to wattpad.etat,
-            "Nb vu" to wattpad.nb_vu?.toString(),
-            "Épisodes restants" to wattpad.nb_ep_res?.toString(),
-            "Total épisodes" to wattpad.nb_ep_tot?.toString(),
-            "Mis à jour" to wattpad.updated,
-            "Notice" to wattpad.notice
+            "Titre" to wattpadItem.titre,
+            "Note" to (wattpadItem.note?.takeIf { it > 0 }?.let { "$it/20" }),
+            "Type" to wattpadItem.type,
+            "Genre" to wattpadItem.genre,
+            "Auteur" to wattpadItem.auteur,
+            "État" to wattpadItem.etat,
+            "Nb vu" to wattpadItem.nb_vu?.takeIf { it > 0 }?.toString(),
+            "Épisodes restants" to wattpadItem.nb_ep_res?.toString(),
+            "Total épisodes" to wattpadItem.nb_ep_tot?.toString(),
+            "Mis à jour" to wattpadItem.updated,
+            "Notice" to wattpadItem.notice
         )
         DetailDialog(
-            title = wattpad.titre ?: "Détails du wattpad",
+            title = wattpadItem.titre ?: "Détails du wattpad",
             details = details,
             coverFile = coverFile,
-            onDismiss = { selectedWattpad = null }
+            onDismiss = { selectedWattpad = null },
+            onEdit = if (onSaveWattpad != null) {
+                { editingWattpad = wattpadItem }
+            } else null,
+            onDelete = if (onDeleteWattpad != null) {
+                {
+                    onDeleteWattpad(wattpadItem)
+                    selectedWattpad = null
+                }
+            } else null
         )
     }
 }

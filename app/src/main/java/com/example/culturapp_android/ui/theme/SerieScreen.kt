@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,8 +47,12 @@ enum class SerieSortOption(val label: String) {
 @Composable
 fun SerieScreen(
     serie: List<Serie>,
+    onSaveSerie: ((Serie) -> Unit)? = null,
+    onDeleteSerie: ((Serie) -> Unit)? = null
 ) {
     var selectedSerie by remember { mutableStateOf<Serie?>(null) }
+    var editingSerie by remember { mutableStateOf<Serie?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
     var sortOption by remember { mutableStateOf(SerieSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -66,104 +72,156 @@ fun SerieScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text(
-                text = "Séries (${serie.size})",
-                style = MaterialTheme.typography.headlineSmall
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Séries (${serie.size})",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                Box {
+                    OutlinedButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Trier")
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        SerieSortOption.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label) },
+                                onClick = {
+                                    sortOption = option
+                                    menuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
             )
 
-            Box {
-                OutlinedButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Trier")
-                }
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    SerieSortOption.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option.label) },
-                            onClick = {
-                                sortOption = option
-                                menuExpanded = false
-                            }
-                        )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(sortedSerie) { serieItem ->
+                    val coverFile = remember(
+                        serieItem.id,
+                        serieItem.titre,
+                        serieItem.titre_principal,
+                        serieItem.titre_secondaire
+                    ) {
+                        getCoverImageFile(context, serieItem.id, serieItem.titre, "serie")
                     }
+                    MediaCard(
+                        title = serieItem.titre_principal,
+                        secondtitre = serieItem.titre_secondaire,
+                        note = serieItem.note,
+                        nbEpVu = serieItem.nb_ep_vu,
+                        nbEpTot = serieItem.nb_ep_tot,
+                        coverFile = coverFile,
+                        onClick = { selectedSerie = serieItem }
+                    )
                 }
             }
         }
 
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(sortedSerie) { serie ->
-                val coverFile = remember(serie.id, serie.titre) {
-                    getCoverImageFile(context, serie.id, serie.titre, "serie")
-                }
-                MediaCard(
-                    title = serie.titre_principal,
-                    secondtitre = serie.titre_secondaire,
-                    note = serie.note,
-                    nbEpVu = serie.nb_ep_vu,
-                    nbEpTot = serie.nb_ep_tot,
-                    coverFile = coverFile,
-                    onClick = { selectedSerie = serie }
-                )
+        if (onSaveSerie != null) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Ajouter une série")
             }
         }
     }
 
-    selectedSerie?.let { serie ->
-        val coverFile = getCoverImageFile(context, serie.id, serie.titre, "serie")
+    if (showAddDialog && onSaveSerie != null) {
+        AddEditSerieDialog(
+            serie = null,
+            onDismiss = { showAddDialog = false },
+            onSave = { newSerie ->
+                onSaveSerie(newSerie)
+                showAddDialog = false
+            }
+        )
+    }
+
+    editingSerie?.let { serieToEdit ->
+        if (onSaveSerie != null) {
+            AddEditSerieDialog(
+                serie = serieToEdit,
+                onDismiss = { editingSerie = null },
+                onSave = { updatedSerie ->
+                    onSaveSerie(updatedSerie)
+                    editingSerie = null
+                    selectedSerie = null
+                }
+            )
+        }
+    }
+
+    selectedSerie?.let { serieItem ->
+        val coverFile = getCoverImageFile(context, serieItem.id, serieItem.titre, "serie")
         val details = listOf(
-            "Titre" to serie.titre,
-            "Note" to (serie.note?.let { "$it/20" }),
-            "Type" to serie.type,
-            "Genre" to serie.genre,
-            "VO" to serie.vo,
-            "Studio" to serie.studio,
-            "État" to serie.etat,
-            "Sortie" to serie.sortie?.toString(),
-            "Nb vu" to serie.nb_vu?.toString(),
-            "Épisodes vus" to serie.nb_ep_vu?.toString(),
-            "Épisodes restants" to serie.nb_ep_res?.toString(),
-            "Total épisodes" to serie.nb_ep_tot?.toString(),
-            "Priorité" to serie.priorite?.toString(),
-            "Mis à jour" to serie.updated,
-            "Notice" to serie.notice
+            "Titre" to serieItem.titre,
+            "Note" to (serieItem.note?.takeIf { it > 0 }?.let { "$it/20" }),
+            "Type" to serieItem.type,
+            "Genre" to serieItem.genre,
+            "VO" to serieItem.vo,
+            "Studio" to serieItem.studio,
+            "État" to serieItem.etat,
+            "Sortie" to serieItem.sortie?.takeIf { it > 0 }?.toString(),
+            "Nb vu" to serieItem.nb_vu?.takeIf { it > 0 }?.toString(),
+            "Épisodes vus" to serieItem.nb_ep_vu?.toString(),
+            "Épisodes restants" to serieItem.nb_ep_res?.toString(),
+            "Total épisodes" to serieItem.nb_ep_tot?.toString(),
+            "Priorité" to serieItem.priorite?.takeIf { it > 0 }?.toString(),
+            "Mis à jour" to serieItem.updated,
+            "Notice" to serieItem.notice
         )
         DetailDialog(
-            title = serie.titre ?: "Détails de la série",
+            title = serieItem.titre ?: "Détails de la série",
             details = details,
             coverFile = coverFile,
-            onDismiss = { selectedSerie = null }
+            onDismiss = { selectedSerie = null },
+            onEdit = if (onSaveSerie != null) {
+                { editingSerie = serieItem }
+            } else null,
+            onDelete = if (onDeleteSerie != null) {
+                {
+                    onDeleteSerie(serieItem)
+                    selectedSerie = null
+                }
+            } else null
         )
     }
 }

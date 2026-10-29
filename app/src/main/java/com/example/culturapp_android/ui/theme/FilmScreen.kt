@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,8 +47,12 @@ enum class FilmSortOption(val label: String) {
 @Composable
 fun FilmScreen(
     film: List<Film>,
+    onSaveFilm: ((Film) -> Unit)? = null,
+    onDeleteFilm: ((Film) -> Unit)? = null
 ) {
     var selectedFilm by remember { mutableStateOf<Film?>(null) }
+    var editingFilm by remember { mutableStateOf<Film?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
     var sortOption by remember { mutableStateOf(FilmSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -66,104 +72,156 @@ fun FilmScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text(
-                text = "Films (${film.size})",
-                style = MaterialTheme.typography.headlineSmall
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Films (${film.size})",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                Box {
+                    OutlinedButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Trier")
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        FilmSortOption.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label) },
+                                onClick = {
+                                    sortOption = option
+                                    menuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
             )
 
-            Box {
-                OutlinedButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Trier")
-                }
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    FilmSortOption.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option.label) },
-                            onClick = {
-                                sortOption = option
-                                menuExpanded = false
-                            }
-                        )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(sortedUsers) { filmItem ->
+                    val coverFile = remember(
+                        filmItem.id,
+                        filmItem.titre,
+                        filmItem.titre_principal,
+                        filmItem.titre_secondaire
+                    ) {
+                        getCoverImageFile(context, filmItem.id, filmItem.titre, "film")
                     }
+                    MediaCard(
+                        title = filmItem.titre_principal,
+                        secondtitre = filmItem.titre_secondaire,
+                        note = filmItem.note,
+                        nbEpVu = filmItem.nb_ep_vu,
+                        nbEpTot = filmItem.nb_ep_tot,
+                        coverFile = coverFile,
+                        onClick = { selectedFilm = filmItem }
+                    )
                 }
             }
         }
 
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(sortedUsers) { film ->
-                val coverFile = remember(film.id, film.titre) {
-                    getCoverImageFile(context, film.id, film.titre, "film")
-                }
-                MediaCard(
-                    title = film.titre_principal,
-                    secondtitre = film.titre_secondaire,
-                    note = film.note,
-                    nbEpVu = film.nb_ep_vu,
-                    nbEpTot = film.nb_ep_tot,
-                    coverFile = coverFile,
-                    onClick = { selectedFilm = film }
-                )
+        if (onSaveFilm != null) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Ajouter un film")
             }
         }
     }
 
-    selectedFilm?.let { film ->
-        val coverFile = getCoverImageFile(context, film.id, film.titre, "film")
+    if (showAddDialog && onSaveFilm != null) {
+        AddEditFilmDialog(
+            film = null,
+            onDismiss = { showAddDialog = false },
+            onSave = { newFilm ->
+                onSaveFilm(newFilm)
+                showAddDialog = false
+            }
+        )
+    }
+
+    editingFilm?.let { filmToEdit ->
+        if (onSaveFilm != null) {
+            AddEditFilmDialog(
+                film = filmToEdit,
+                onDismiss = { editingFilm = null },
+                onSave = { updatedFilm ->
+                    onSaveFilm(updatedFilm)
+                    editingFilm = null
+                    selectedFilm = null
+                }
+            )
+        }
+    }
+
+    selectedFilm?.let { filmItem ->
+        val coverFile = getCoverImageFile(context, filmItem.id, filmItem.titre, "film")
         val details = listOf(
-            "Titre" to film.titre,
-            "Note" to (film.note?.let { "$it/20" }),
-            "Type" to film.type,
-            "Genre" to film.genre,
-            "VO" to film.vo,
-            "Cinéma" to film.cinema?.toString(),
-            "État" to film.etat,
-            "Année vu" to film.annee_vu?.toString(),
-            "Nb vu" to film.nb_vu?.toString(),
-            "Sortie" to film.sortie,
-            "Épisodes vus" to film.nb_ep_vu?.toString(),
-            "Épisodes restants" to film.nb_ep_res?.toString(),
-            "Total épisodes" to film.nb_ep_tot?.toString(),
-            "Mis à jour" to film.updated,
-            "Notice" to film.notice
+            "Titre" to filmItem.titre,
+            "Note" to (filmItem.note?.takeIf { it > 0 }?.let { "$it/20" }),
+            "Type" to filmItem.type,
+            "Genre" to filmItem.genre,
+            "VO" to filmItem.vo,
+            "Cinéma" to filmItem.cinema?.takeIf { it > 0 }?.toString(),
+            "État" to filmItem.etat,
+            "Année vu" to filmItem.annee_vu?.takeIf { it > 0 }?.toString(),
+            "Nb vu" to filmItem.nb_vu?.takeIf { it > 0 }?.toString(),
+            "Sortie" to filmItem.sortie,
+            "Épisodes vus" to filmItem.nb_ep_vu?.toString(),
+            "Épisodes restants" to filmItem.nb_ep_res?.toString(),
+            "Total épisodes" to filmItem.nb_ep_tot?.toString(),
+            "Mis à jour" to filmItem.updated,
+            "Notice" to filmItem.notice
         )
         DetailDialog(
-            title = film.titre ?: "Détails du film",
+            title = filmItem.titre ?: "Détails du film",
             details = details,
             coverFile = coverFile,
-            onDismiss = { selectedFilm = null }
+            onDismiss = { selectedFilm = null },
+            onEdit = if (onSaveFilm != null) {
+                { editingFilm = filmItem }
+            } else null,
+            onDelete = if (onDeleteFilm != null) {
+                {
+                    onDeleteFilm(filmItem)
+                    selectedFilm = null
+                }
+            } else null
         )
     }
 }

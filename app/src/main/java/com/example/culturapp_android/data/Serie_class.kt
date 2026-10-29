@@ -6,8 +6,8 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "serie")
 data class Serie(
 
-    @PrimaryKey
-    val id: Int?,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int? = null,
 
     val titre: String?,
 

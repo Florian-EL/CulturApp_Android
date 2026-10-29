@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,8 +47,12 @@ enum class RomanSortOption(val label: String) {
 @Composable
 fun RomanScreen(
     roman: List<Roman>,
+    onSaveRoman: ((Roman) -> Unit)? = null,
+    onDeleteRoman: ((Roman) -> Unit)? = null
 ) {
     var selectedRoman by remember { mutableStateOf<Roman?>(null) }
+    var editingRoman by remember { mutableStateOf<Roman?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
     var sortOption by remember { mutableStateOf(RomanSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -65,102 +71,154 @@ fun RomanScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text(
-                text = "Roman (${roman.size})",
-                style = MaterialTheme.typography.headlineSmall
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Roman (${roman.size})",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+
+                Box {
+                    OutlinedButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Trier")
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        RomanSortOption.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label) },
+                                onClick = {
+                                    sortOption = option
+                                    menuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
             )
 
-            Box {
-                OutlinedButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Trier")
-                }
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    RomanSortOption.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option.label) },
-                            onClick = {
-                                sortOption = option
-                                menuExpanded = false
-                            }
-                        )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(sortedRoman) { romanItem ->
+                    val coverFile = remember(
+                        romanItem.id,
+                        romanItem.titre,
+                        romanItem.titre_principal,
+                        romanItem.titre_secondaire
+                    ) {
+                        getCoverImageFile(context, romanItem.id, romanItem.titre, "roman")
                     }
+                    MediaCard(
+                        title = romanItem.titre_principal,
+                        secondtitre = romanItem.titre_secondaire,
+                        note = romanItem.note,
+                        nbEpVu = romanItem.nb_ep_vu,
+                        nbEpTot = romanItem.nb_ep_tot,
+                        coverFile = coverFile,
+                        onClick = { selectedRoman = romanItem }
+                    )
                 }
             }
         }
 
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(sortedRoman) { roman ->
-                val coverFile = remember(roman.id, roman.titre) {
-                    getCoverImageFile(context, roman.id, roman.titre, "roman")
-                }
-                MediaCard(
-                    title = roman.titre_principal,
-                    secondtitre = roman.titre_secondaire,
-                    note = roman.note,
-                    nbEpVu = roman.nb_ep_vu,
-                    nbEpTot = roman.nb_ep_tot,
-                    coverFile = coverFile,
-                    onClick = { selectedRoman = roman }
-                )
+        if (onSaveRoman != null) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Ajouter un roman")
             }
         }
     }
 
-    selectedRoman?.let { roman ->
-        val coverFile = getCoverImageFile(context, roman.id, roman.titre, "roman")
+    if (showAddDialog && onSaveRoman != null) {
+        AddEditRomanDialog(
+            roman = null,
+            onDismiss = { showAddDialog = false },
+            onSave = { newRoman ->
+                onSaveRoman(newRoman)
+                showAddDialog = false
+            }
+        )
+    }
+
+    editingRoman?.let { romanToEdit ->
+        if (onSaveRoman != null) {
+            AddEditRomanDialog(
+                roman = romanToEdit,
+                onDismiss = { editingRoman = null },
+                onSave = { updatedRoman ->
+                    onSaveRoman(updatedRoman)
+                    editingRoman = null
+                    selectedRoman = null
+                }
+            )
+        }
+    }
+
+    selectedRoman?.let { romanItem ->
+        val coverFile = getCoverImageFile(context, romanItem.id, romanItem.titre, "roman")
         val details = listOf(
-            "Titre" to roman.titre,
-            "Note" to (roman.note?.let { "$it/20" }),
-            "Type" to roman.type,
-            "Genre" to roman.genre,
-            "Auteur" to roman.auteur,
-            "État" to roman.etat,
-            "Possédé" to roman.possede,
-            "Nb vu" to roman.nb_vu?.toString(),
-            "Épisodes vus" to roman.nb_ep_vu?.toString(),
-            "Épisodes restants" to roman.nb_ep_res?.toString(),
-            "Total épisodes" to roman.nb_ep_tot?.toString(),
-            "Mis à jour" to roman.updated,
-            "Notice" to roman.notice
+            "Titre" to romanItem.titre,
+            "Note" to (romanItem.note?.takeIf { it > 0 }?.let { "$it/20" }),
+            "Type" to romanItem.type,
+            "Genre" to romanItem.genre,
+            "Auteur" to romanItem.auteur,
+            "État" to romanItem.etat,
+            "Possédé" to romanItem.possede,
+            "Nb vu" to romanItem.nb_vu?.takeIf { it > 0 }?.toString(),
+            "Épisodes vus" to romanItem.nb_ep_vu?.toString(),
+            "Épisodes restants" to romanItem.nb_ep_res?.toString(),
+            "Total épisodes" to romanItem.nb_ep_tot?.toString(),
+            "Mis à jour" to romanItem.updated,
+            "Notice" to romanItem.notice
         )
         DetailDialog(
-            title = roman.titre ?: "Détails du roman",
+            title = romanItem.titre ?: "Détails du roman",
             details = details,
             coverFile = coverFile,
-            onDismiss = { selectedRoman = null }
+            onDismiss = { selectedRoman = null },
+            onEdit = if (onSaveRoman != null) {
+                { editingRoman = romanItem }
+            } else null,
+            onDelete = if (onDeleteRoman != null) {
+                {
+                    onDeleteRoman(romanItem)
+                    selectedRoman = null
+                }
+            } else null
         )
     }
 }

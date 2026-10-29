@@ -6,8 +6,8 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "webtoon")
 data class Webtoon(
 
-    @PrimaryKey
-    val id: Int?,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int? = null,
 
     val titre: String?,
 

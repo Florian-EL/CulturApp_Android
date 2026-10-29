@@ -6,8 +6,8 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "manga")
 data class Manga(
 
-    @PrimaryKey
-    val id: Int?,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int? = null,
 
     val titre: String?,
 

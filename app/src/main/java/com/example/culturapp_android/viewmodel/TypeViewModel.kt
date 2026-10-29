@@ -14,6 +14,7 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import com.example.culturapp_android.data.AppDatabase
 import com.example.culturapp_android.data.Film
 import com.example.culturapp_android.data.LibraryRepository
@@ -38,7 +39,10 @@ class TypeViewModel(
             application,
             AppDatabase::class.java,
             "library.db"
-        ).fallbackToDestructiveMigration().build()
+        )
+            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+            .fallbackToDestructiveMigration()
+            .build()
 
     private var libraryRepository =
         LibraryRepository(
@@ -61,7 +65,10 @@ class TypeViewModel(
             context,
             AppDatabase::class.java,
             "library.db"
-        ).fallbackToDestructiveMigration().build()
+        )
+            .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
+            .fallbackToDestructiveMigration()
+            .build()
 
         libraryRepository = LibraryRepository(
             database.filmdaos(),
@@ -106,19 +113,25 @@ class TypeViewModel(
             isLoading = true
             try {
                 val context = getApplication<Application>()
+                val destFile = context.getDatabasePath("library.db")
                 val prefs = context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
                 val savedUriStr = prefs.getString("saved_db_folder_uri", null)
-                if (!savedUriStr.isNullOrEmpty()) {
+
+                if (!destFile.exists() && !savedUriStr.isNullOrEmpty()) {
                     try {
                         loadDatabaseFromFolderInternal(Uri.parse(savedUriStr))
                     } catch (e: Exception) {
-                        Log.e("TypeViewModel", "Error refreshing from saved folder", e)
-                        withContext(Dispatchers.Main) {
-                            setStatus("Erreur lors de la synchronisation : ${e.message}", true)
-                        }
+                        Log.e("TypeViewModel", "Error initial loading from saved folder", e)
                         loadAllData()
                     }
                 } else {
+                    if (!savedUriStr.isNullOrEmpty()) {
+                        val folderUri = Uri.parse(savedUriStr)
+                        val physicalDir = getPhysicalFileFromUri(context, folderUri)
+                        destFile.parentFile?.let { parentDir ->
+                            copyImages(context, folderUri, parentDir, physicalDir)
+                        }
+                    }
                     loadAllData()
                 }
             } finally {
@@ -246,6 +259,264 @@ class TypeViewModel(
         }
     }
 
+    suspend fun exportDatabaseToSavedFolder() = withContext(Dispatchers.IO) {
+        val context = getApplication<Application>()
+        val localDbFile = context.getDatabasePath("library.db")
+        if (!localDbFile.exists()) return@withContext
+
+        val prefs = context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
+        val savedUriStr = prefs.getString("saved_db_folder_uri", null) ?: return@withContext
+        val folderUri = Uri.parse(savedUriStr)
+
+        try {
+            database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)").close()
+        } catch (e: Exception) {
+            Log.w("TypeViewModel", "Checkpoint PRAGMA failed", e)
+        }
+
+        val physicalDir = getPhysicalFileFromUri(context, folderUri)
+        var physicalDbFile: File? = null
+        if (physicalDir != null && physicalDir.exists() && physicalDir.isDirectory) {
+            physicalDbFile = physicalDir.listFiles()?.find { file ->
+                val name = file.name ?: ""
+                name.endsWith(".db", ignoreCase = true) || name.endsWith(
+                    ".sqlite",
+                    ignoreCase = true
+                )
+            }
+            if (physicalDbFile == null) {
+                physicalDbFile = File(physicalDir, "library.db")
+            }
+        }
+
+        var copied = false
+        if (physicalDbFile != null && (physicalDbFile.exists() || physicalDbFile.createNewFile())) {
+            if (physicalDbFile.canWrite()) {
+                try {
+                    FileInputStream(localDbFile).use { input ->
+                        FileOutputStream(physicalDbFile).use { output ->
+                            input.copyTo(output)
+                            output.flush()
+                            output.fd.sync()
+                        }
+                    }
+                    copied = true
+                    Log.i(
+                        "TypeViewModel",
+                        "Exported database directly to physical file: ${physicalDbFile.absolutePath}"
+                    )
+                } catch (e: Exception) {
+                    Log.w("TypeViewModel", "Direct physical export failed, falling back to SAF", e)
+                }
+            }
+        }
+
+        if (!copied) {
+            val documentDir = DocumentFile.fromTreeUri(context, folderUri) ?: return@withContext
+            var targetDoc = documentDir.listFiles()?.find { file ->
+                val name = file.name ?: ""
+                name.endsWith(".db", ignoreCase = true) || name.endsWith(
+                    ".sqlite",
+                    ignoreCase = true
+                )
+            }
+            if (targetDoc == null) {
+                targetDoc = documentDir.createFile("application/octet-stream", "library.db")
+            }
+
+            targetDoc?.uri?.let { uri ->
+                context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
+                    FileInputStream(localDbFile).use { input ->
+                        input.copyTo(output)
+                        output.flush()
+                    }
+                    copied = true
+                    Log.i("TypeViewModel", "Exported database via SAF to $uri")
+                }
+            }
+        }
+    }
+
+    fun saveFilm(film: Film) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.saveFilm(film)
+                exportDatabaseToSavedFolder()
+                loadFilm()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error saving film", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de l'enregistrement du film : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun deleteFilm(film: Film) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.deleteFilm(film)
+                exportDatabaseToSavedFolder()
+                loadFilm()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error deleting film", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de la suppression : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun saveSerie(serie: Serie) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.saveSerie(serie)
+                exportDatabaseToSavedFolder()
+                loadSerie()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error saving serie", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de l'enregistrement de la série : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun deleteSerie(serie: Serie) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.deleteSerie(serie)
+                exportDatabaseToSavedFolder()
+                loadSerie()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error deleting serie", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de la suppression : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun saveRoman(roman: Roman) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.saveRoman(roman)
+                exportDatabaseToSavedFolder()
+                loadRoman()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error saving roman", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de l'enregistrement du roman : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun deleteRoman(roman: Roman) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.deleteRoman(roman)
+                exportDatabaseToSavedFolder()
+                loadRoman()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error deleting roman", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de la suppression : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun saveManga(manga: Manga) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.saveManga(manga)
+                exportDatabaseToSavedFolder()
+                loadManga()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error saving manga", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de l'enregistrement du manga : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun deleteManga(manga: Manga) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.deleteManga(manga)
+                exportDatabaseToSavedFolder()
+                loadManga()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error deleting manga", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de la suppression : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun saveWebtoon(webtoon: Webtoon) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.saveWebtoon(webtoon)
+                exportDatabaseToSavedFolder()
+                loadWebtoon()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error saving webtoon", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de l'enregistrement du webtoon : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun deleteWebtoon(webtoon: Webtoon) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.deleteWebtoon(webtoon)
+                exportDatabaseToSavedFolder()
+                loadWebtoon()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error deleting webtoon", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de la suppression : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun saveWattpad(wattpad: Wattpad) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.saveWattpad(wattpad)
+                exportDatabaseToSavedFolder()
+                loadWattpad()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error saving wattpad", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de l'enregistrement : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun deleteWattpad(wattpad: Wattpad) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.deleteWattpad(wattpad)
+                exportDatabaseToSavedFolder()
+                loadWattpad()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error deleting wattpad", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de la suppression : ${e.message}", true)
+                }
+            }
+        }
+    }
+
     private fun getPhysicalFileFromUri(context: Context, uri: Uri): File? {
         try {
             if (uri.authority == "com.android.externalstorage.documents") {
@@ -352,10 +623,6 @@ class TypeViewModel(
 
             if (!copied) {
                 copyUriToFile(context, uri, destFile)
-                Log.i(
-                    "TypeViewModel",
-                    "SAF copy successful: $uri -> ${destFile.absolutePath} (${destFile.length()} bytes)"
-                )
             }
         }
 
@@ -414,68 +681,91 @@ class TypeViewModel(
         }
     }
 
-    private fun copyImagesInBackground(
+    private suspend fun copyImages(
         context: Context,
         folderUri: Uri,
         destDir: File,
         physicalDir: File?
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (physicalDir != null && physicalDir.exists() && physicalDir.isDirectory) {
-                    physicalDir.listFiles()?.forEach { file ->
-                        val name = file.name ?: ""
-                        if (name.endsWith(".jpg", ignoreCase = true) ||
-                            name.endsWith(".jpeg", ignoreCase = true) ||
-                            name.endsWith(".png", ignoreCase = true) ||
-                            name.endsWith(".webp", ignoreCase = true)
-                        ) {
-                            val imageDest = File(destDir, name)
-                            if (!imageDest.exists() || imageDest.length() == 0L) {
-                                try {
-                                    FileInputStream(file).use { input ->
-                                        FileOutputStream(imageDest).use { output ->
-                                            input.copyTo(output)
-                                            output.flush()
-                                            output.fd.sync()
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    Log.w("TypeViewModel", "Failed to copy physical image $name", e)
+    ) = withContext(Dispatchers.IO) {
+        destDir.mkdirs()
+
+        var directCopyComplete = false
+        if (physicalDir != null && physicalDir.exists() && physicalDir.isDirectory) {
+            val imageFiles = physicalDir.listFiles()
+                ?.filter { it.isFile && it.name.isSupportedCoverImage() }
+                .orEmpty()
+
+            if (imageFiles.isNotEmpty()) {
+                directCopyComplete = true
+                imageFiles.forEach { file ->
+                    val imageDest = File(destDir, file.name)
+                    if (!imageDest.exists() || imageDest.length() == 0L) {
+                        try {
+                            FileInputStream(file).use { input ->
+                                FileOutputStream(imageDest).use { output ->
+                                    input.copyTo(output)
+                                    output.flush()
+                                    output.fd.sync()
                                 }
                             }
-                        }
-                    }
-                } else {
-                    val documentDir = DocumentFile.fromTreeUri(context, folderUri)
-                    documentDir?.listFiles()?.forEach { file ->
-                        val name = file.name ?: ""
-                        if (name.endsWith(".jpg", ignoreCase = true) ||
-                            name.endsWith(".jpeg", ignoreCase = true) ||
-                            name.endsWith(".png", ignoreCase = true) ||
-                            name.endsWith(".webp", ignoreCase = true)
-                        ) {
-                            val imageDest = File(destDir, name)
-                            if (!imageDest.exists() || imageDest.length() == 0L) {
-                                try {
-                                    scanAndCopyFile(context, file.uri, imageDest)
-                                } catch (e: Exception) {
-                                    Log.w("TypeViewModel", "Failed to copy SAF image $name", e)
-                                }
-                            }
+                            Log.i(
+                                "TypeViewModel",
+                                "Copied cover ${file.name} to ${imageDest.absolutePath}"
+                            )
+                        } catch (e: Exception) {
+                            directCopyComplete = false
+                            imageDest.delete()
+                            Log.w(
+                                "TypeViewModel",
+                                "Direct copy failed for cover ${file.absolutePath}; will try SAF",
+                                e
+                            )
                         }
                     }
                 }
-            } catch (e: Exception) {
-                Log.w("TypeViewModel", "Error copying images in background", e)
+            }
+
+            // Android may expose a File path that exists but cannot be listed under scoped
+            // storage. SAF has the persisted read permission, so use it when direct access
+            // found no images or failed to copy any of them.
+            if (!directCopyComplete) {
+                val documentDir = DocumentFile.fromTreeUri(context, folderUri)
+                val imageFiles = documentDir?.listFiles()
+                    ?.filter { it.isFile && it.name?.isSupportedCoverImage() == true }
+                    .orEmpty()
+
+                imageFiles.forEach { file ->
+                    val name = file.name ?: return@forEach
+                    val imageDest = File(destDir, name)
+                    if (!imageDest.exists() || imageDest.length() == 0L) {
+                        try {
+                            scanAndCopyFile(context, file.uri, imageDest)
+                            Log.i(
+                                "TypeViewModel",
+                                "Copied SAF cover $name to ${imageDest.absolutePath}"
+                            )
+                        } catch (e: Exception) {
+                            imageDest.delete()
+                            Log.w("TypeViewModel", "Failed to copy SAF image $name", e)
+                        }
+                    }
+                }
+                if (documentDir == null) {
+                    Log.w("TypeViewModel", "Could not open selected folder through SAF: $folderUri")
+                }
             }
         }
     }
 
+    private fun String.isSupportedCoverImage(): Boolean =
+        endsWith(".jpg", ignoreCase = true) ||
+                endsWith(".jpeg", ignoreCase = true) ||
+                endsWith(".png", ignoreCase = true) ||
+                endsWith(".webp", ignoreCase = true)
+
     private suspend fun loadDatabaseFromFolderInternal(folderUri: Uri) =
         withContext(Dispatchers.IO) {
             val context = getApplication<Application>()
-            Log.i("TypeViewModel", "Loading database from folderUri: $folderUri")
 
             // First, purge and clear all database cache completely before loading
             clearDatabaseCache(context)
@@ -501,10 +791,6 @@ class TypeViewModel(
                 }
 
             if (physicalDbFile != null && physicalDbFile.exists() && physicalDbFile.canRead()) {
-                Log.i(
-                    "TypeViewModel",
-                    "Found physical database file directly: ${physicalDbFile.absolutePath}"
-                )
                 FileInputStream(physicalDbFile).use { input ->
                     FileOutputStream(stagedDb).use { output ->
                         input.copyTo(output)
@@ -580,18 +866,12 @@ class TypeViewModel(
             val prefs = context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
             prefs.edit().putString("saved_db_folder_uri", folderUri.toString()).apply()
 
-            // Instantly load the new database data into UI!
-            loadAllData()
-
-            withContext(Dispatchers.Main) {
-                val totalItems =
-                    films.size + series.size + romans.size + mangas.size + webtoon.size + wattpad.size
-                // setStatus("Données actualisées ($totalItems éléments : ${films.size} films, ${series.size} séries, ${romans.size} romans, ${mangas.size} mangas, ${webtoon.size} webtoons, ${wattpad.size} wattpad).", false)
+            // Copy missing images synchronously before loading data
+            destFile.parentFile?.let { parentDir ->
+                copyImages(context, folderUri, parentDir, physicalDir)
             }
 
-            // Copy missing images asynchronously in background without blocking UI
-            destFile.parentFile?.let { parentDir ->
-                copyImagesInBackground(context, folderUri, parentDir, physicalDir)
-        }
+            // Instantly load the new database data into UI!
+            loadAllData()
     }
 }

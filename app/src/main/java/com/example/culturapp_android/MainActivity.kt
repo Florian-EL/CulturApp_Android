@@ -256,12 +256,41 @@ class MainActivity : ComponentActivity() {
                                 wattpad = viewModel.wattpad,
                                 onNavigateToScreen = { screen -> currentScreen = screen }
                             )
-                            AppScreen.FILMS -> FilmScreen(film = viewModel.films)
-                            AppScreen.SERIES -> SerieScreen(serie = viewModel.series)
-                            AppScreen.ROMAN -> RomanScreen(roman = viewModel.romans)
-                            AppScreen.MANGA -> MangaScreen(manga = viewModel.mangas)
-                            AppScreen.WEBTOON -> WebtoonScreen(webtoon = viewModel.webtoon)
-                            AppScreen.WATTPAD -> WattpadScreen(wattpad = viewModel.wattpad)
+                            AppScreen.FILMS -> FilmScreen(
+                                film = viewModel.films,
+                                onSaveFilm = { viewModel.saveFilm(it) },
+                                onDeleteFilm = { viewModel.deleteFilm(it) }
+                            )
+
+                            AppScreen.SERIES -> SerieScreen(
+                                serie = viewModel.series,
+                                onSaveSerie = { viewModel.saveSerie(it) },
+                                onDeleteSerie = { viewModel.deleteSerie(it) }
+                            )
+
+                            AppScreen.ROMAN -> RomanScreen(
+                                roman = viewModel.romans,
+                                onSaveRoman = { viewModel.saveRoman(it) },
+                                onDeleteRoman = { viewModel.deleteRoman(it) }
+                            )
+
+                            AppScreen.MANGA -> MangaScreen(
+                                manga = viewModel.mangas,
+                                onSaveManga = { viewModel.saveManga(it) },
+                                onDeleteManga = { viewModel.deleteManga(it) }
+                            )
+
+                            AppScreen.WEBTOON -> WebtoonScreen(
+                                webtoon = viewModel.webtoon,
+                                onSaveWebtoon = { viewModel.saveWebtoon(it) },
+                                onDeleteWebtoon = { viewModel.deleteWebtoon(it) }
+                            )
+
+                            AppScreen.WATTPAD -> WattpadScreen(
+                                wattpad = viewModel.wattpad,
+                                onSaveWattpad = { viewModel.saveWattpad(it) },
+                                onDeleteWattpad = { viewModel.deleteWattpad(it) }
+                            )
                         }
                     }
                 }
