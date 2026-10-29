@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.culturapp_android.data.Roman
 
 enum class RomanSortOption(val label: String) {
+    INIT("Initialisation"),
     TITLE_ASC("Titre (A-Z)"),
     TITLE_DESC("Titre (Z-A)"),
     NOTE_DESC("Note (Décroissante)"),
@@ -46,12 +47,14 @@ fun RomanScreen(
     roman: List<Roman>,
 ) {
     var selectedRoman by remember { mutableStateOf<Roman?>(null) }
-    var sortOption by remember { mutableStateOf(RomanSortOption.TITLE_ASC) }
+    var sortOption by remember { mutableStateOf(RomanSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val sortedRoman = remember(roman, sortOption) {
         when (sortOption) {
+            RomanSortOption.INIT -> roman.sortedWith(
+                compareBy<Roman> { it.etat ?: "" }.thenBy { it.updated ?: "" }.thenBy { it.titre })
             RomanSortOption.TITLE_ASC -> roman.sortedBy { it.titre_principal ?: it.titre ?: "" }
             RomanSortOption.TITLE_DESC -> roman.sortedByDescending {
                 it.titre_principal ?: it.titre ?: ""

@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.culturapp_android.data.Serie
 
 enum class SerieSortOption(val label: String) {
+    INIT("Initialisation"),
     TITLE_ASC("Titre (A-Z)"),
     TITLE_DESC("Titre (Z-A)"),
     NOTE_DESC("Note (Décroissante)"),
@@ -46,12 +47,15 @@ fun SerieScreen(
     serie: List<Serie>,
 ) {
     var selectedSerie by remember { mutableStateOf<Serie?>(null) }
-    var sortOption by remember { mutableStateOf(SerieSortOption.TITLE_ASC) }
+    var sortOption by remember { mutableStateOf(SerieSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val sortedSerie = remember(serie, sortOption) {
         when (sortOption) {
+            SerieSortOption.INIT -> serie.sortedWith(
+                compareBy<Serie> { it.updated ?: "" }.thenBy { it.etat }.thenBy { it.priorite }
+                    .thenBy { it.titre })
             SerieSortOption.TITLE_ASC -> serie.sortedBy { it.titre_principal ?: it.titre ?: "" }
             SerieSortOption.TITLE_DESC -> serie.sortedByDescending {
                 it.titre_principal ?: it.titre ?: ""

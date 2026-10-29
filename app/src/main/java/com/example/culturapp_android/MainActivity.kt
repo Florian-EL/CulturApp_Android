@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +44,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.culturapp_android.ui.theme.EntranceScreen
 import com.example.culturapp_android.ui.theme.FilmScreen
 import com.example.culturapp_android.ui.theme.MangaScreen
 import com.example.culturapp_android.ui.theme.RomanScreen
@@ -53,7 +55,7 @@ import com.example.culturapp_android.viewmodel.TypeViewModel
 import kotlinx.coroutines.launch
 
 enum class AppScreen {
-    FILMS, SERIES, ROMAN, MANGA, WEBTOON, WATTPAD
+    HOME, FILMS, SERIES, ROMAN, MANGA, WEBTOON, WATTPAD
 }
 
 class MainActivity : ComponentActivity() {
@@ -78,7 +80,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            var currentScreen by remember { mutableStateOf(AppScreen.FILMS) }
+            var currentScreen by remember { mutableStateOf(AppScreen.HOME) }
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
             val scope = rememberCoroutineScope()
             val launcher = rememberLauncherForActivityResult(
@@ -132,6 +134,22 @@ class MainActivity : ComponentActivity() {
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
+
+                        NavigationDrawerItem(
+                            label = { Text("Accueil") },
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = "Accueil"
+                                )
+                            },
+                            selected = currentScreen == AppScreen.HOME,
+                            onClick = {
+                                currentScreen = AppScreen.HOME
+                                scope.launch { drawerState.close() }
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
 
                         NavigationDrawerItem(
                             label = { Text("Films") },
@@ -229,6 +247,15 @@ class MainActivity : ComponentActivity() {
                         .padding(innerPadding)
                         .fillMaxSize()) {
                         when (currentScreen) {
+                            AppScreen.HOME -> EntranceScreen(
+                                films = viewModel.films,
+                                series = viewModel.series,
+                                romans = viewModel.romans,
+                                mangas = viewModel.mangas,
+                                webtoon = viewModel.webtoon,
+                                wattpad = viewModel.wattpad,
+                                onNavigateToScreen = { screen -> currentScreen = screen }
+                            )
                             AppScreen.FILMS -> FilmScreen(film = viewModel.films)
                             AppScreen.SERIES -> SerieScreen(serie = viewModel.series)
                             AppScreen.ROMAN -> RomanScreen(roman = viewModel.romans)

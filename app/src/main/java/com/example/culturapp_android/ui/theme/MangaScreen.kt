@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.culturapp_android.data.Manga
 
 enum class MangaSortOption(val label: String) {
+    INIT("Initialisation"),
     TITLE_ASC("Titre (A-Z)"),
     TITLE_DESC("Titre (Z-A)"),
     NOTE_DESC("Note (Décroissante)"),
@@ -46,12 +47,14 @@ fun MangaScreen(
     manga: List<Manga>,
 ) {
     var selectedManga by remember { mutableStateOf<Manga?>(null) }
-    var sortOption by remember { mutableStateOf(MangaSortOption.TITLE_ASC) }
+    var sortOption by remember { mutableStateOf(MangaSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val sortedManga = remember(manga, sortOption) {
         when (sortOption) {
+            MangaSortOption.INIT -> manga.sortedWith(
+                compareBy<Manga> { it.etat ?: "" }.thenBy { it.updated }.thenBy { it.titre })
             MangaSortOption.TITLE_ASC -> manga.sortedBy { it.titre_principal ?: it.titre ?: "" }
             MangaSortOption.TITLE_DESC -> manga.sortedByDescending {
                 it.titre_principal ?: it.titre ?: ""

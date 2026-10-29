@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.culturapp_android.data.Webtoon
 
 enum class WebtoonSortOption(val label: String) {
+    INIT("Initialisation"),
     TITLE_ASC("Titre (A-Z)"),
     TITLE_DESC("Titre (Z-A)"),
     NOTE_DESC("Note (Décroissante)"),
@@ -46,12 +47,14 @@ fun WebtoonScreen(
     webtoon: List<Webtoon>,
 ) {
     var selectedWebtoon by remember { mutableStateOf<Webtoon?>(null) }
-    var sortOption by remember { mutableStateOf(WebtoonSortOption.TITLE_ASC) }
+    var sortOption by remember { mutableStateOf(WebtoonSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val sortedWebtoon = remember(webtoon, sortOption) {
         when (sortOption) {
+            WebtoonSortOption.INIT -> webtoon.sortedWith(
+                compareBy<Webtoon> { it.etat ?: "" }.thenBy { it.updated }.thenBy { it.titre })
             WebtoonSortOption.TITLE_ASC -> webtoon.sortedBy { it.titre_principal ?: it.titre ?: "" }
             WebtoonSortOption.TITLE_DESC -> webtoon.sortedByDescending {
                 it.titre_principal ?: it.titre ?: ""

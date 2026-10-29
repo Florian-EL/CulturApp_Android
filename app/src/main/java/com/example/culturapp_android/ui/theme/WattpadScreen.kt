@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.culturapp_android.data.Wattpad
 
 enum class WattpadSortOption(val label: String) {
+    INIT("Initialisation"),
     TITLE_ASC("Titre (A-Z)"),
     TITLE_DESC("Titre (Z-A)"),
     NOTE_DESC("Note (Décroissante)"),
@@ -46,12 +47,14 @@ fun WattpadScreen(
     wattpad: List<Wattpad>,
 ) {
     var selectedWattpad by remember { mutableStateOf<Wattpad?>(null) }
-    var sortOption by remember { mutableStateOf(WattpadSortOption.TITLE_ASC) }
+    var sortOption by remember { mutableStateOf(WattpadSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val sortedWattpad = remember(wattpad, sortOption) {
         when (sortOption) {
+            WattpadSortOption.INIT -> wattpad.sortedWith(
+                compareBy<Wattpad> { it.etat ?: "" }.thenBy { it.updated }.thenBy { it.titre })
             WattpadSortOption.TITLE_ASC -> wattpad.sortedBy { it.titre_principal ?: it.titre ?: "" }
             WattpadSortOption.TITLE_DESC -> wattpad.sortedByDescending {
                 it.titre_principal ?: it.titre ?: ""

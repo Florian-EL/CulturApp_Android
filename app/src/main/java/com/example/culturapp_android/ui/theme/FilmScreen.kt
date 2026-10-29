@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.culturapp_android.data.Film
 
 enum class FilmSortOption(val label: String) {
+    INIT("Initialisation"),
     TITLE_ASC("Titre (A-Z)"),
     TITLE_DESC("Titre (Z-A)"),
     NOTE_DESC("Note (Décroissante)"),
@@ -46,12 +47,15 @@ fun FilmScreen(
     film: List<Film>,
 ) {
     var selectedFilm by remember { mutableStateOf<Film?>(null) }
-    var sortOption by remember { mutableStateOf(FilmSortOption.TITLE_ASC) }
+    var sortOption by remember { mutableStateOf(FilmSortOption.INIT) }
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val sortedUsers = remember(film, sortOption) {
         when (sortOption) {
+            FilmSortOption.INIT -> film.sortedWith(
+                compareByDescending<Film> { it.updated ?: "" }.thenBy { it.etat }
+                    .thenBy { it.titre })
             FilmSortOption.TITLE_ASC -> film.sortedBy { it.titre_principal ?: it.titre ?: "" }
             FilmSortOption.TITLE_DESC -> film.sortedByDescending {
                 it.titre_principal ?: it.titre ?: ""
