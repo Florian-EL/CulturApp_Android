@@ -113,25 +113,17 @@ class TypeViewModel(
             isLoading = true
             try {
                 val context = getApplication<Application>()
-                val destFile = context.getDatabasePath("library.db")
                 val prefs = context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
                 val savedUriStr = prefs.getString("saved_db_folder_uri", null)
 
-                if (!destFile.exists() && !savedUriStr.isNullOrEmpty()) {
+                if (!savedUriStr.isNullOrEmpty()) {
                     try {
                         loadDatabaseFromFolderInternal(Uri.parse(savedUriStr))
                     } catch (e: Exception) {
-                        Log.e("TypeViewModel", "Error initial loading from saved folder", e)
+                        Log.e("TypeViewModel", "Error loading database from saved folder", e)
                         loadAllData()
                     }
                 } else {
-                    if (!savedUriStr.isNullOrEmpty()) {
-                        val folderUri = Uri.parse(savedUriStr)
-                        val physicalDir = getPhysicalFileFromUri(context, folderUri)
-                        destFile.parentFile?.let { parentDir ->
-                            copyImages(context, folderUri, parentDir, physicalDir)
-                        }
-                    }
                     loadAllData()
                 }
             } finally {
@@ -696,10 +688,17 @@ class TypeViewModel(
                 .orEmpty()
 
             if (imageFiles.isNotEmpty()) {
-                directCopyComplete = true
+                var allSucceeded = true
                 imageFiles.forEach { file ->
                     val imageDest = File(destDir, file.name)
-                    if (!imageDest.exists() || imageDest.length() == 0L) {
+                    val srcLength = file.length()
+                    val srcLastModified = file.lastModified()
+                    val shouldCopy = !imageDest.exists() ||
+                            imageDest.length() == 0L ||
+                            imageDest.length() != srcLength ||
+                            (srcLastModified > 0 && srcLastModified > imageDest.lastModified())
+
+                    if (shouldCopy) {
                         try {
                             FileInputStream(file).use { input ->
                                 FileOutputStream(imageDest).use { output ->
@@ -708,12 +707,15 @@ class TypeViewModel(
                                     output.fd.sync()
                                 }
                             }
+                            if (srcLastModified > 0) {
+                                imageDest.setLastModified(srcLastModified)
+                            }
                             Log.i(
                                 "TypeViewModel",
-                                "Copied cover ${file.name} to ${imageDest.absolutePath}"
+                                "Copied updated cover ${file.name} to ${imageDest.absolutePath}"
                             )
                         } catch (e: Exception) {
-                            directCopyComplete = false
+                            allSucceeded = false
                             imageDest.delete()
                             Log.w(
                                 "TypeViewModel",
@@ -723,36 +725,47 @@ class TypeViewModel(
                         }
                     }
                 }
+                if (allSucceeded) {
+                    directCopyComplete = true
+                }
             }
+        }
 
-            // Android may expose a File path that exists but cannot be listed under scoped
-            // storage. SAF has the persisted read permission, so use it when direct access
-            // found no images or failed to copy any of them.
-            if (!directCopyComplete) {
-                val documentDir = DocumentFile.fromTreeUri(context, folderUri)
-                val imageFiles = documentDir?.listFiles()
-                    ?.filter { it.isFile && it.name?.isSupportedCoverImage() == true }
-                    .orEmpty()
+        // SAF fallback when direct physical access is not available or incomplete
+        if (!directCopyComplete) {
+            val documentDir = DocumentFile.fromTreeUri(context, folderUri)
+            val imageFiles = documentDir?.listFiles()
+                ?.filter { it.isFile && it.name?.isSupportedCoverImage() == true }
+                .orEmpty()
 
-                imageFiles.forEach { file ->
-                    val name = file.name ?: return@forEach
-                    val imageDest = File(destDir, name)
-                    if (!imageDest.exists() || imageDest.length() == 0L) {
-                        try {
-                            scanAndCopyFile(context, file.uri, imageDest)
-                            Log.i(
-                                "TypeViewModel",
-                                "Copied SAF cover $name to ${imageDest.absolutePath}"
-                            )
-                        } catch (e: Exception) {
-                            imageDest.delete()
-                            Log.w("TypeViewModel", "Failed to copy SAF image $name", e)
+            imageFiles.forEach { file ->
+                val name = file.name ?: return@forEach
+                val imageDest = File(destDir, name)
+                val srcLength = file.length()
+                val srcLastModified = file.lastModified()
+                val shouldCopy = !imageDest.exists() ||
+                        imageDest.length() == 0L ||
+                        imageDest.length() != srcLength ||
+                        (srcLastModified > 0 && srcLastModified > imageDest.lastModified())
+
+                if (shouldCopy) {
+                    try {
+                        scanAndCopyFile(context, file.uri, imageDest)
+                        if (srcLastModified > 0) {
+                            imageDest.setLastModified(srcLastModified)
                         }
+                        Log.i(
+                            "TypeViewModel",
+                            "Copied updated SAF cover $name to ${imageDest.absolutePath}"
+                        )
+                    } catch (e: Exception) {
+                        imageDest.delete()
+                        Log.w("TypeViewModel", "Failed to copy SAF image $name", e)
                     }
                 }
-                if (documentDir == null) {
-                    Log.w("TypeViewModel", "Could not open selected folder through SAF: $folderUri")
-                }
+            }
+            if (documentDir == null) {
+                Log.w("TypeViewModel", "Could not open selected folder through SAF: $folderUri")
             }
         }
     }
