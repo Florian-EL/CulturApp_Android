@@ -47,6 +47,7 @@ enum class MangaSortOption(val label: String) {
 @Composable
 fun MangaScreen(
     manga: List<Manga>,
+    imagesVersion: Int = 0,
     onSaveManga: ((Manga) -> Unit)? = null,
     onDeleteManga: ((Manga) -> Unit)? = null
 ) {
@@ -134,7 +135,8 @@ fun MangaScreen(
                         mangaItem.id,
                         mangaItem.titre,
                         mangaItem.titre_principal,
-                        mangaItem.titre_secondaire
+                        mangaItem.titre_secondaire,
+                        imagesVersion
                     ) {
                         getCoverImageFile(context, mangaItem.id, mangaItem.titre, "manga")
                     }

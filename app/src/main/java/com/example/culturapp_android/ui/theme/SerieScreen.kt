@@ -47,6 +47,7 @@ enum class SerieSortOption(val label: String) {
 @Composable
 fun SerieScreen(
     serie: List<Serie>,
+    imagesVersion: Int = 0,
     onSaveSerie: ((Serie) -> Unit)? = null,
     onDeleteSerie: ((Serie) -> Unit)? = null
 ) {
@@ -135,7 +136,8 @@ fun SerieScreen(
                         serieItem.id,
                         serieItem.titre,
                         serieItem.titre_principal,
-                        serieItem.titre_secondaire
+                        serieItem.titre_secondaire,
+                        imagesVersion
                     ) {
                         getCoverImageFile(context, serieItem.id, serieItem.titre, "serie")
                     }
@@ -199,7 +201,7 @@ fun SerieScreen(
             "VO" to serieItem.vo,
             "Studio" to serieItem.studio,
             "État" to serieItem.etat,
-            "Sortie" to serieItem.sortie?.takeIf { it > 0 }?.toString(),
+            "Sortie" to serieItem.sortie,
             "Nb vu" to serieItem.nb_vu?.takeIf { it > 0 }?.toString(),
             "Épisodes vus" to serieItem.nb_ep_vu?.toString(),
             "Épisodes restants" to serieItem.nb_ep_res?.toString(),

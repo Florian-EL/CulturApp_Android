@@ -415,7 +415,7 @@ fun AddEditSerieDialog(
     var titrePrincipal by remember { mutableStateOf(serie?.titre_principal ?: "") }
     var titreSecondaire by remember { mutableStateOf(serie?.titre_secondaire ?: "") }
     var note by remember { mutableStateOf(serie?.note?.toString() ?: "") }
-    var sortie by remember { mutableStateOf(serie?.sortie?.toString() ?: "") }
+    var sortie by remember { mutableStateOf(serie?.sortie ?: "") }
     var priorite by remember { mutableStateOf(serie?.priorite?.toString() ?: "") }
     var type by remember { mutableStateOf(serie?.type ?: "") }
     var genre by remember { mutableStateOf(serie?.genre ?: "") }
@@ -477,8 +477,7 @@ fun AddEditSerieDialog(
                 OutlinedTextField(
                     value = sortie,
                     onValueChange = { sortie = it },
-                    label = { Text("Année de sortie") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    label = { Text("Date de sortie") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -578,12 +577,12 @@ fun AddEditSerieDialog(
                                 vo = vo.sanitizeString(),
                                 updated = updated.sanitizeString(),
                                 etat = null,
-                                sortie = sortie.toIntOrNull()?.takeIf { it > 0 },
+                                sortie = sortie,
                                 nb_vu = serie?.nb_vu,
-                                nb_ep_vu = nbEpVu.toIntOrNull()?.takeIf { it > 0 },
+                                nb_ep_vu = nbEpVu.toIntOrNull()?.takeIf { it >= 0 },
                                 nb_ep_res = null,
-                                nb_ep_tot = nbEpTot.toIntOrNull()?.takeIf { it > 0 },
-                                priorite = priorite.toIntOrNull()?.takeIf { it > 0 },
+                                nb_ep_tot = nbEpTot.toIntOrNull()?.takeIf { it >= 0 },
+                                priorite = priorite.toIntOrNull()?.takeIf { it >= 0 },
                                 notice = notice.sanitizeString(),
                                 titre_principal = titrePrincipal.sanitizeString(),
                                 titre_secondaire = titreSecondaire.sanitizeString(),

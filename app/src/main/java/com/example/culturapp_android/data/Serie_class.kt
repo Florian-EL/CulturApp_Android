@@ -23,7 +23,7 @@ data class Serie(
 
     val etat: String?,
 
-    val sortie: Int?,
+    val sortie: String?,
 
     val nb_vu: Int?,
 

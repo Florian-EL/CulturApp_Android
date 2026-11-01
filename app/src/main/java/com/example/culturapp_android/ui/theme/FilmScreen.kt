@@ -47,6 +47,7 @@ enum class FilmSortOption(val label: String) {
 @Composable
 fun FilmScreen(
     film: List<Film>,
+    imagesVersion: Int = 0,
     onSaveFilm: ((Film) -> Unit)? = null,
     onDeleteFilm: ((Film) -> Unit)? = null
 ) {
@@ -135,7 +136,8 @@ fun FilmScreen(
                         filmItem.id,
                         filmItem.titre,
                         filmItem.titre_principal,
-                        filmItem.titre_secondaire
+                        filmItem.titre_secondaire,
+                        imagesVersion
                     ) {
                         getCoverImageFile(context, filmItem.id, filmItem.titre, "film")
                     }

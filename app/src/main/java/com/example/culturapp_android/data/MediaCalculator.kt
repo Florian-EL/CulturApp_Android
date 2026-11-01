@@ -160,7 +160,7 @@ object MediaCalculator {
             studio = sanitizeString(serie.studio),
             etat = etat,
             updated = updated,
-            sortie = serie.sortie?.takeIf { it > 0 },
+            sortie = serie.sortie,
             nb_ep_tot = nbEpTot,
             nb_ep_vu = nbEpVu,
             nb_ep_res = nbEpRes,

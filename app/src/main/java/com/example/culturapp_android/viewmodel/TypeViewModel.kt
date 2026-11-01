@@ -8,6 +8,7 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.documentfile.provider.DocumentFile
@@ -103,6 +104,14 @@ class TypeViewModel(
 
     var isLoading by mutableStateOf(false)
         private set
+
+    var isImagesLoading by mutableStateOf(false)
+        private set
+
+    var imagesVersion by mutableIntStateOf(0)
+        private set
+
+    private var copyImagesJob: kotlinx.coroutines.Job? = null
 
     init {
         refresh()
@@ -673,6 +682,27 @@ class TypeViewModel(
         }
     }
 
+    private fun startBackgroundImagesCopy(context: Context, folderUri: Uri, physicalDir: File?) {
+        copyImagesJob?.cancel()
+        copyImagesJob = viewModelScope.launch(Dispatchers.IO) {
+            val destFile = context.getDatabasePath("library.db")
+            val parentDir = destFile.parentFile ?: return@launch
+            withContext(Dispatchers.Main) {
+                isImagesLoading = true
+            }
+            try {
+                copyImages(context, folderUri, parentDir, physicalDir)
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error copying images in background", e)
+            } finally {
+                withContext(Dispatchers.Main) {
+                    isImagesLoading = false
+                    imagesVersion++
+                }
+            }
+        }
+    }
+
     private suspend fun copyImages(
         context: Context,
         folderUri: Uri,
@@ -681,6 +711,7 @@ class TypeViewModel(
     ) = withContext(Dispatchers.IO) {
         destDir.mkdirs()
 
+        var copiedCount = 0
         var directCopyComplete = false
         if (physicalDir != null && physicalDir.exists() && physicalDir.isDirectory) {
             val imageFiles = physicalDir.listFiles()
@@ -709,6 +740,12 @@ class TypeViewModel(
                             }
                             if (srcLastModified > 0) {
                                 imageDest.setLastModified(srcLastModified)
+                            }
+                            copiedCount++
+                            if (copiedCount % 10 == 0) {
+                                withContext(Dispatchers.Main) {
+                                    imagesVersion++
+                                }
                             }
                             Log.i(
                                 "TypeViewModel",
@@ -753,6 +790,12 @@ class TypeViewModel(
                         scanAndCopyFile(context, file.uri, imageDest)
                         if (srcLastModified > 0) {
                             imageDest.setLastModified(srcLastModified)
+                        }
+                        copiedCount++
+                        if (copiedCount % 10 == 0) {
+                            withContext(Dispatchers.Main) {
+                                imagesVersion++
+                            }
                         }
                         Log.i(
                             "TypeViewModel",
@@ -879,12 +922,12 @@ class TypeViewModel(
             val prefs = context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
             prefs.edit().putString("saved_db_folder_uri", folderUri.toString()).apply()
 
-            // Copy missing images synchronously before loading data
-            destFile.parentFile?.let { parentDir ->
-                copyImages(context, folderUri, parentDir, physicalDir)
-            }
-
             // Instantly load the new database data into UI!
             loadAllData()
-    }
+
+            // Copy missing images asynchronously in background without blocking initial DB load
+            destFile.parentFile?.let {
+                startBackgroundImagesCopy(context, folderUri, physicalDir)
+            }
+        }
 }

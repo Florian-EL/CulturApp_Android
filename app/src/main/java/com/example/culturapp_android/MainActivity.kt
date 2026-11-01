@@ -220,7 +220,7 @@ class MainActivity : ComponentActivity() {
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Text("CulturApp")
-                                    if (viewModel.isLoading) {
+                                    if (viewModel.isLoading || viewModel.isImagesLoading) {
                                         CircularProgressIndicator(
                                             modifier = Modifier.size(20.dp),
                                             strokeWidth = 2.dp
@@ -258,36 +258,42 @@ class MainActivity : ComponentActivity() {
                             )
                             AppScreen.FILMS -> FilmScreen(
                                 film = viewModel.films,
+                                imagesVersion = viewModel.imagesVersion,
                                 onSaveFilm = { viewModel.saveFilm(it) },
                                 onDeleteFilm = { viewModel.deleteFilm(it) }
                             )
 
                             AppScreen.SERIES -> SerieScreen(
                                 serie = viewModel.series,
+                                imagesVersion = viewModel.imagesVersion,
                                 onSaveSerie = { viewModel.saveSerie(it) },
                                 onDeleteSerie = { viewModel.deleteSerie(it) }
                             )
 
                             AppScreen.ROMAN -> RomanScreen(
                                 roman = viewModel.romans,
+                                imagesVersion = viewModel.imagesVersion,
                                 onSaveRoman = { viewModel.saveRoman(it) },
                                 onDeleteRoman = { viewModel.deleteRoman(it) }
                             )
 
                             AppScreen.MANGA -> MangaScreen(
                                 manga = viewModel.mangas,
+                                imagesVersion = viewModel.imagesVersion,
                                 onSaveManga = { viewModel.saveManga(it) },
                                 onDeleteManga = { viewModel.deleteManga(it) }
                             )
 
                             AppScreen.WEBTOON -> WebtoonScreen(
                                 webtoon = viewModel.webtoon,
+                                imagesVersion = viewModel.imagesVersion,
                                 onSaveWebtoon = { viewModel.saveWebtoon(it) },
                                 onDeleteWebtoon = { viewModel.deleteWebtoon(it) }
                             )
 
                             AppScreen.WATTPAD -> WattpadScreen(
                                 wattpad = viewModel.wattpad,
+                                imagesVersion = viewModel.imagesVersion,
                                 onSaveWattpad = { viewModel.saveWattpad(it) },
                                 onDeleteWattpad = { viewModel.deleteWattpad(it) }
                             )

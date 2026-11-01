@@ -47,6 +47,7 @@ enum class WebtoonSortOption(val label: String) {
 @Composable
 fun WebtoonScreen(
     webtoon: List<Webtoon>,
+    imagesVersion: Int = 0,
     onSaveWebtoon: ((Webtoon) -> Unit)? = null,
     onDeleteWebtoon: ((Webtoon) -> Unit)? = null
 ) {
@@ -134,7 +135,8 @@ fun WebtoonScreen(
                         webtoonItem.id,
                         webtoonItem.titre,
                         webtoonItem.titre_principal,
-                        webtoonItem.titre_secondaire
+                        webtoonItem.titre_secondaire,
+                        imagesVersion
                     ) {
                         getCoverImageFile(context, webtoonItem.id, webtoonItem.titre, "webtoon")
                     }

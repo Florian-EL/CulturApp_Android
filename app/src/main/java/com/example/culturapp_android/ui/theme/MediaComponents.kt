@@ -302,16 +302,6 @@ fun DetailDialog(
                         modifier = Modifier.weight(1f)
                     )
                     Row {
-                        if (onEdit != null) {
-                            androidx.compose.material3.TextButton(onClick = onEdit) {
-                                Text("Éditer")
-                            }
-                        }
-                        if (onDelete != null) {
-                            androidx.compose.material3.TextButton(onClick = onDelete) {
-                                Text("Supprimer", color = MaterialTheme.colorScheme.error)
-                            }
-                        }
                         IconButton(onClick = onDismiss) {
                             Icon(imageVector = Icons.Default.Close, contentDescription = "Fermer")
                         }
@@ -391,6 +381,19 @@ fun DetailDialog(
                         )
                     }
                 }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    if (onEdit != null) {
+                        androidx.compose.material3.TextButton(onClick = onEdit) {
+                            Text("Éditer")
+                        }
+                    }
+                    if (onDelete != null) {
+                        androidx.compose.material3.TextButton(onClick = onDelete) {
+                            Text("Supprimer", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+
             }
         }
     }

@@ -47,6 +47,7 @@ enum class WattpadSortOption(val label: String) {
 @Composable
 fun WattpadScreen(
     wattpad: List<Wattpad>,
+    imagesVersion: Int = 0,
     onSaveWattpad: ((Wattpad) -> Unit)? = null,
     onDeleteWattpad: ((Wattpad) -> Unit)? = null
 ) {
@@ -134,7 +135,8 @@ fun WattpadScreen(
                         wattpadItem.id,
                         wattpadItem.titre,
                         wattpadItem.titre_principal,
-                        wattpadItem.titre_secondaire
+                        wattpadItem.titre_secondaire,
+                        imagesVersion
                     ) {
                         getCoverImageFile(context, wattpadItem.id, wattpadItem.titre, "wattpad")
                     }

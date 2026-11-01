@@ -47,6 +47,7 @@ enum class RomanSortOption(val label: String) {
 @Composable
 fun RomanScreen(
     roman: List<Roman>,
+    imagesVersion: Int = 0,
     onSaveRoman: ((Roman) -> Unit)? = null,
     onDeleteRoman: ((Roman) -> Unit)? = null
 ) {
@@ -134,7 +135,8 @@ fun RomanScreen(
                         romanItem.id,
                         romanItem.titre,
                         romanItem.titre_principal,
-                        romanItem.titre_secondaire
+                        romanItem.titre_secondaire,
+                        imagesVersion
                     ) {
                         getCoverImageFile(context, romanItem.id, romanItem.titre, "roman")
                     }
