@@ -14,7 +14,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "2.3"
+        versionName = "2.4.1"
     }
 
     compileOptions {
@@ -48,6 +48,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation(libs.androidx.compose.ui.text)
+    implementation(libs.androidx.material3)
 
     debugImplementation(
         "androidx.compose.ui:ui-tooling"

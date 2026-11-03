@@ -1,7 +1,9 @@
 package com.example.culturapp_android.ui.theme
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +13,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -19,12 +27,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.culturapp_android.data.Film
@@ -39,6 +51,61 @@ private fun String?.sanitizeString(): String? {
     return if (trimmed.isEmpty() || trimmed.equals("None", ignoreCase = true) || trimmed.equals("null", ignoreCase = true) || trimmed.equals("0", ignoreCase = true)) null else trimmed
 }
 
+@Composable
+fun NumberCounter(
+    label: String,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    minValue: Int = 0,
+    maxValue: Int = Int.MAX_VALUE,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 2,
+            textAlign = TextAlign.Center
+        )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            IconButton(
+                onClick = {
+                    onValueChange((value - 1).coerceAtLeast(minValue))
+                },
+                enabled = value > minValue
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Remove,
+                    contentDescription = "Diminuer"
+                )
+            }
+
+            Text(
+                text = value.toString(),
+                style = MaterialTheme.typography.titleLarge
+            )
+
+            IconButton(
+                onClick = {
+                    onValueChange((value + 1).coerceAtMost(maxValue))
+                },
+                enabled = value < maxValue
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Augmenter"
+                )
+            }
+        }
+    }
+}
 @Composable
 fun AddEditFilmDialog(
     film: Film? = null,
@@ -416,12 +483,12 @@ fun AddEditSerieDialog(
     var titreSecondaire by remember { mutableStateOf(serie?.titre_secondaire ?: "") }
     var note by remember { mutableStateOf(serie?.note?.toString() ?: "") }
     var sortie by remember { mutableStateOf(serie?.sortie ?: "") }
-    var priorite by remember { mutableStateOf(serie?.priorite?.toString() ?: "") }
+    var priorite by remember { mutableIntStateOf(serie?.priorite ?: 0) }
     var type by remember { mutableStateOf(serie?.type ?: "") }
     var genre by remember { mutableStateOf(serie?.genre ?: "") }
     var vo by remember { mutableStateOf(serie?.vo ?: "") }
-    var nbEpVu by remember { mutableStateOf(serie?.nb_ep_vu?.toString() ?: "") }
-    var nbEpTot by remember { mutableStateOf(serie?.nb_ep_tot?.toString() ?: "") }
+    var nbEpVu by remember { mutableIntStateOf(serie?.nb_ep_vu ?: 0) }
+    var nbEpTot by remember { mutableIntStateOf(serie?.nb_ep_tot ?: 0) }
     var updated by remember { mutableStateOf(serie?.updated ?: "") }
     var studio by remember { mutableStateOf(serie?.studio ?: "") }
     var notice by remember { mutableStateOf(serie?.notice ?: "") }
@@ -431,18 +498,26 @@ fun AddEditSerieDialog(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 6.dp,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(4.dp)
         ) {
+            Column(modifier = Modifier.background(color = MaterialTheme.colorScheme.surface)) {
+                Text(
+                    text = if (serie == null) "Ajouter une Série" else "Modifier $titrePrincipal",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+
+                    )
+            }
+
             Column(
                 modifier = Modifier
-                    .padding(20.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = if (serie == null) "Ajouter une Série" else "Modifier la Série",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -483,35 +558,38 @@ fun AddEditSerieDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
+                NumberCounter(
+                    label = "Priorité",
                     value = priorite,
                     onValueChange = { priorite = it },
-                    label = { Text("Priorité") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = nbEpVu,
-                    onValueChange = { nbEpVu = it },
-                    label = { Text("Épisodes vus") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NumberCounter(
+                        label = "Épisodes vus",
+                        value = nbEpVu,
+                        onValueChange = { nbEpVu = it },
+                        maxValue = nbEpTot,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = nbEpTot,
-                    onValueChange = { nbEpTot = it },
-                    label = { Text("Épisodes total") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
+                    NumberCounter(
+                        label = "Épisodes total",
+                        value = nbEpTot,
+                        onValueChange = {
+                            nbEpTot = it
+                            nbEpVu = nbEpVu.coerceAtMost(it)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 OutlinedTextField(
                     value = type,
@@ -519,6 +597,40 @@ fun AddEditSerieDialog(
                     label = { Text("Type") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column {
+                    Text("Statut mise à jour")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            OutlinedButton(
+                                onClick = { updated = status },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 4.dp
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (updated == status)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        Color.Transparent
+                                )
+                            ) {
+                                Text(
+                                    status,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -538,14 +650,6 @@ fun AddEditSerieDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = updated,
-                    onValueChange = { updated = it },
-                    label = { Text("Statut mise à jour") },
-                    modifier = Modifier.fillMaxWidth()
-                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -579,10 +683,10 @@ fun AddEditSerieDialog(
                                 etat = null,
                                 sortie = sortie,
                                 nb_vu = serie?.nb_vu,
-                                nb_ep_vu = nbEpVu.toIntOrNull()?.takeIf { it >= 0 },
+                                nb_ep_vu = nbEpVu,
                                 nb_ep_res = null,
-                                nb_ep_tot = nbEpTot.toIntOrNull()?.takeIf { it >= 0 },
-                                priorite = priorite.toIntOrNull()?.takeIf { it >= 0 },
+                                nb_ep_tot = nbEpTot,
+                                priorite = priorite.takeIf { it > 0 },
                                 notice = notice.sanitizeString(),
                                 titre_principal = titrePrincipal.sanitizeString(),
                                 titre_secondaire = titreSecondaire.sanitizeString(),
