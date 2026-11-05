@@ -67,8 +67,8 @@ fun WebtoonScreen(
                 it.titre_principal ?: it.titre ?: ""
             }
 
-            WebtoonSortOption.NOTE_DESC -> webtoon.sortedByDescending { it.note ?: 0 }
-            WebtoonSortOption.NOTE_ASC -> webtoon.sortedBy { it.note ?: 0 }
+            WebtoonSortOption.NOTE_DESC -> webtoon.sortedByDescending { it.note ?: 0f }
+            WebtoonSortOption.NOTE_ASC -> webtoon.sortedBy { it.note ?: 0f }
         }
     }
 

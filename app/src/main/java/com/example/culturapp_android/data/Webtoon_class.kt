@@ -13,7 +13,7 @@ data class Webtoon(
 
     val auteur: String?,
 
-    val note: Int?,
+    val note: Float?,
 
     val type: String?,
 

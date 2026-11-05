@@ -252,7 +252,7 @@ private fun <T> createStat(
     items: List<T>,
     seenEpList: List<Int?>,
     totalEpList: List<Int?>,
-    noteList: List<Int?>,
+    noteList: List<Float?>,
     etatList: List<String?>,
     icon: ImageVector,
     accentColor: Color,

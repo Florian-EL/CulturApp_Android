@@ -23,10 +23,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -114,11 +116,13 @@ fun AddEditFilmDialog(
 ) {
     var titrePrincipal by remember { mutableStateOf(film?.titre_principal ?: "") }
     var titreSecondaire by remember { mutableStateOf(film?.titre_secondaire ?: "") }
-    var note by remember { mutableStateOf(film?.note?.toString() ?: "") }
+    var note by remember { mutableFloatStateOf(film?.note ?: 0f) }
     var type by remember { mutableStateOf(film?.type ?: "") }
     var genre by remember { mutableStateOf(film?.genre ?: "") }
     var vo by remember { mutableStateOf(film?.vo ?: "") }
-    var cinema by remember { mutableStateOf(film?.cinema?.toString() ?: "") }
+    var cinema by remember { mutableStateOf(if (film?.cinema == 1) "OUI" else if (film?.cinema == 0) "NON" else "") }
+    var nbEpVu by remember { mutableIntStateOf(film?.nb_ep_vu ?: 0) }
+    var nbEpTot by remember { mutableIntStateOf(film?.nb_ep_tot ?: 0) }
     var updated by remember { mutableStateOf(film?.updated ?: "") }
     var anneeVu by remember { mutableStateOf(film?.annee_vu?.toString() ?: "") }
     var sortie by remember { mutableStateOf(film?.sortie ?: "") }
@@ -162,13 +166,42 @@ fun AddEditFilmDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note (/20)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Note : ${note}/20")
+
+                    Slider(
+                        value = note,
+                        onValueChange = { note = it },
+                        valueRange = 0f..20f,
+                        steps = 79
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NumberCounter(
+                        label = "Épisodes vus",
+                        value = nbEpVu,
+                        onValueChange = { nbEpVu = it },
+                        maxValue = nbEpTot,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    NumberCounter(
+                        label = "Épisodes total",
+                        value = nbEpTot,
+                        onValueChange = {
+                            nbEpTot = it
+                            nbEpVu = nbEpVu.coerceAtMost(it)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -218,12 +251,70 @@ fun AddEditFilmDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = updated,
-                    onValueChange = { updated = it },
-                    label = { Text("Statut sortie (ex: PAS SORTI)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Cinéma")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("OUI", "NON").forEach { option ->
+                            OutlinedButton(
+                                onClick = { cinema = option },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 4.dp
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (cinema == option)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        Color.Transparent
+                                )
+                            ) {
+                                Text(
+                                    option,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column {
+                    Text("Statut mise à jour")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            OutlinedButton(
+                                onClick = { updated = status },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 4.dp
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (updated == status)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        Color.Transparent
+                                )
+                            ) {
+                                Text(
+                                    status,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -249,19 +340,19 @@ fun AddEditFilmDialog(
                             val newFilm = Film(
                                 id = film?.id,
                                 titre = film?.titre,
-                                note = note.toIntOrNull()?.takeIf { it > 0 },
+                                note = note.takeIf { it > 0f },
                                 type = type.sanitizeString(),
                                 genre = genre.sanitizeString(),
                                 vo = vo.sanitizeString(),
-                                cinema = cinema.toIntOrNull()?.takeIf { it > 0 },
+                                cinema = if (cinema == "OUI") 1 else if (cinema == "NON") 0 else null,
                                 updated = updated.sanitizeString(),
                                 etat = null,
                                 annee_vu = anneeVu.toIntOrNull()?.takeIf { it > 0 },
                                 nb_vu = null,
                                 sortie = sortie.sanitizeString(),
-                                nb_ep_vu = null,
+                                nb_ep_vu = nbEpVu,
                                 nb_ep_res = null,
-                                nb_ep_tot = null,
+                                nb_ep_tot = nbEpTot,
                                 notice = notice.sanitizeString(),
                                 titre_principal = titrePrincipal.sanitizeString(),
                                 titre_secondaire = titreSecondaire.sanitizeString()
@@ -286,13 +377,13 @@ fun AddEditMangaDialog(
     var titrePrincipal by remember { mutableStateOf(manga?.titre_principal ?: "") }
     var titreSecondaire by remember { mutableStateOf(manga?.titre_secondaire ?: "") }
     var auteur by remember { mutableStateOf(manga?.auteur ?: "") }
-    var note by remember { mutableStateOf(manga?.note?.toString() ?: "") }
+    var note by remember { mutableFloatStateOf(manga?.note ?: 0f) }
     var type by remember { mutableStateOf(manga?.type ?: "") }
     var genre by remember { mutableStateOf(manga?.genre ?: "") }
     var vo by remember { mutableStateOf(manga?.vo ?: "") }
     var epDeb by remember { mutableStateOf(manga?.ep_deb?.toString() ?: "") }
-    var epAct by remember { mutableStateOf(manga?.ep_act?.toString() ?: "") }
-    var nbEpTot by remember { mutableStateOf(manga?.nb_ep_tot?.toString() ?: "") }
+    var nbEpVu by remember { mutableIntStateOf(manga?.nb_ep_vu ?: manga?.ep_act ?: 0) }
+    var nbEpTot by remember { mutableIntStateOf(manga?.nb_ep_tot ?: 0) }
     var updated by remember { mutableStateOf(manga?.updated ?: "") }
     var site by remember { mutableStateOf(manga?.site ?: "") }
     var luSuite by remember { mutableStateOf(manga?.lu_suite ?: "") }
@@ -345,13 +436,16 @@ fun AddEditMangaDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note (/20)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Note : ${note}/20")
+
+                    Slider(
+                        value = note,
+                        onValueChange = { note = it },
+                        valueRange = 0f..20f,
+                        steps = 79
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -365,23 +459,29 @@ fun AddEditMangaDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = epAct,
-                    onValueChange = { epAct = it },
-                    label = { Text("Chapitre / Épisode Actuel") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NumberCounter(
+                        label = "Épisodes vus",
+                        value = nbEpVu,
+                        onValueChange = { nbEpVu = it },
+                        maxValue = nbEpTot,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = nbEpTot,
-                    onValueChange = { nbEpTot = it },
-                    label = { Text("Nombre total d'épisodes") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    NumberCounter(
+                        label = "Épisodes total",
+                        value = nbEpTot,
+                        onValueChange = {
+                            nbEpTot = it
+                            nbEpVu = nbEpVu.coerceAtMost(it)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -412,12 +512,37 @@ fun AddEditMangaDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = updated,
-                    onValueChange = { updated = it },
-                    label = { Text("Statut mise à jour") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Statut mise à jour")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            OutlinedButton(
+                                onClick = { updated = status },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 4.dp
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (updated == status)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        Color.Transparent
+                                )
+                            ) {
+                                Text(
+                                    status,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -444,7 +569,7 @@ fun AddEditMangaDialog(
                                 id = manga?.id,
                                 titre = manga?.titre,
                                 auteur = auteur.sanitizeString(),
-                                note = note.toIntOrNull()?.takeIf { it > 0 },
+                                note = note.takeIf { it > 0f },
                                 type = type.sanitizeString(),
                                 vo = vo.sanitizeString(),
                                 genre = genre.sanitizeString(),
@@ -453,11 +578,11 @@ fun AddEditMangaDialog(
                                 etat = null,
                                 nb_vu = null,
                                 ep_deb = epDeb.toIntOrNull()?.takeIf { it > 0 },
-                                ep_act = epAct.toIntOrNull()?.takeIf { it > 0 },
+                                ep_act = epDeb.toIntOrNull()?.let { it + nbEpVu } ?: nbEpVu,
                                 nb_ep_res = null,
                                 site = site.sanitizeString(),
-                                nb_ep_tot = nbEpTot.toIntOrNull()?.takeIf { it > 0 },
-                                nb_ep_vu = null,
+                                nb_ep_tot = nbEpTot,
+                                nb_ep_vu = nbEpVu,
                                 notice = notice.sanitizeString(),
                                 titre_principal = titrePrincipal.sanitizeString(),
                                 titre_secondaire = titreSecondaire.sanitizeString()
@@ -481,7 +606,7 @@ fun AddEditSerieDialog(
 ) {
     var titrePrincipal by remember { mutableStateOf(serie?.titre_principal ?: "") }
     var titreSecondaire by remember { mutableStateOf(serie?.titre_secondaire ?: "") }
-    var note by remember { mutableStateOf(serie?.note?.toString() ?: "") }
+    var note by remember { mutableFloatStateOf(serie?.note ?: 0f) }
     var sortie by remember { mutableStateOf(serie?.sortie ?: "") }
     var priorite by remember { mutableIntStateOf(serie?.priorite ?: 0) }
     var type by remember { mutableStateOf(serie?.type ?: "") }
@@ -539,13 +664,16 @@ fun AddEditSerieDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note (/20)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Note : ${note}/20")
+
+                    Slider(
+                        value = note,
+                        onValueChange = { note = it },
+                        valueRange = 0f..20f,
+                        steps = 79
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -675,7 +803,7 @@ fun AddEditSerieDialog(
                             val newSerie = Serie(
                                 id = serie?.id,
                                 titre = serie?.titre,
-                                note = note.toIntOrNull()?.takeIf { it > 0 },
+                                note = note.takeIf { it > 0f },
                                 type = type.sanitizeString(),
                                 genre = genre.sanitizeString(),
                                 vo = vo.sanitizeString(),
@@ -712,11 +840,11 @@ fun AddEditRomanDialog(
     var titrePrincipal by remember { mutableStateOf(roman?.titre_principal ?: "") }
     var titreSecondaire by remember { mutableStateOf(roman?.titre_secondaire ?: "") }
     var auteur by remember { mutableStateOf(roman?.auteur ?: "") }
-    var note by remember { mutableStateOf(roman?.note?.toString() ?: "") }
+    var note by remember { mutableFloatStateOf(roman?.note ?: 0f) }
     var type by remember { mutableStateOf(roman?.type ?: "") }
     var genre by remember { mutableStateOf(roman?.genre ?: "") }
-    var nbEpVu by remember { mutableStateOf(roman?.nb_ep_vu?.toString() ?: "") }
-    var nbEpTot by remember { mutableStateOf(roman?.nb_ep_tot?.toString() ?: "") }
+    var nbEpVu by remember { mutableIntStateOf(roman?.nb_ep_vu ?: 0) }
+    var nbEpTot by remember { mutableIntStateOf(roman?.nb_ep_tot ?: 0) }
     var updated by remember { mutableStateOf(roman?.updated ?: "") }
     var possede by remember { mutableStateOf(roman?.possede ?: "") }
     var notice by remember { mutableStateOf(roman?.notice ?: "") }
@@ -768,33 +896,42 @@ fun AddEditRomanDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note (/20)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Note : ${note}/20")
+
+                    Slider(
+                        value = note,
+                        onValueChange = { note = it },
+                        valueRange = 0f..20f,
+                        steps = 79
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = nbEpVu,
-                    onValueChange = { nbEpVu = it },
-                    label = { Text("Chapitres/Tomes lus") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NumberCounter(
+                        label = "Épisodes vus",
+                        value = nbEpVu,
+                        onValueChange = { nbEpVu = it },
+                        maxValue = nbEpTot,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = nbEpTot,
-                    onValueChange = { nbEpTot = it },
-                    label = { Text("Total Chapitres/Tomes") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    NumberCounter(
+                        label = "Épisodes total",
+                        value = nbEpTot,
+                        onValueChange = {
+                            nbEpTot = it
+                            nbEpVu = nbEpVu.coerceAtMost(it)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -816,21 +953,70 @@ fun AddEditRomanDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = possede,
-                    onValueChange = { possede = it },
-                    label = { Text("Possédé") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Possédé")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("OUI", "NON").forEach { option ->
+                            OutlinedButton(
+                                onClick = { possede = option },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 4.dp
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (possede == option)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        Color.Transparent
+                                )
+                            ) {
+                                Text(
+                                    option,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = updated,
-                    onValueChange = { updated = it },
-                    label = { Text("Statut mise à jour") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Statut mise à jour")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            OutlinedButton(
+                                onClick = { updated = status },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 4.dp
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (updated == status)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        Color.Transparent
+                                )
+                            ) {
+                                Text(
+                                    status,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -857,15 +1043,15 @@ fun AddEditRomanDialog(
                                 id = roman?.id,
                                 titre = roman?.titre,
                                 auteur = auteur.sanitizeString(),
-                                note = note.toIntOrNull()?.takeIf { it > 0 },
+                                note = note.takeIf { it > 0f },
                                 type = type.sanitizeString(),
                                 genre = genre.sanitizeString(),
                                 updated = updated.sanitizeString(),
                                 etat = null,
                                 nb_vu = roman?.nb_vu,
-                                nb_ep_vu = nbEpVu.toIntOrNull()?.takeIf { it > 0 },
+                                nb_ep_vu = nbEpVu,
                                 nb_ep_res = null,
-                                nb_ep_tot = nbEpTot.toIntOrNull()?.takeIf { it > 0 },
+                                nb_ep_tot = nbEpTot,
                                 possede = possede.sanitizeString(),
                                 notice = notice.sanitizeString(),
                                 titre_principal = titrePrincipal.sanitizeString(),
@@ -891,11 +1077,11 @@ fun AddEditWebtoonDialog(
     var titrePrincipal by remember { mutableStateOf(webtoon?.titre_principal ?: "") }
     var titreSecondaire by remember { mutableStateOf(webtoon?.titre_secondaire ?: "") }
     var auteur by remember { mutableStateOf(webtoon?.auteur ?: "") }
-    var note by remember { mutableStateOf(webtoon?.note?.toString() ?: "") }
+    var note by remember { mutableFloatStateOf(webtoon?.note ?: 0f) }
     var type by remember { mutableStateOf(webtoon?.type ?: "") }
     var genre by remember { mutableStateOf(webtoon?.genre ?: "") }
-    var nbEpVu by remember { mutableStateOf(webtoon?.nb_ep_vu?.toString() ?: "") }
-    var nbEpTot by remember { mutableStateOf(webtoon?.nb_ep_tot?.toString() ?: "") }
+    var nbEpVu by remember { mutableIntStateOf(webtoon?.nb_ep_vu ?: 0) }
+    var nbEpTot by remember { mutableIntStateOf(webtoon?.nb_ep_tot ?: 0) }
     var updated by remember { mutableStateOf(webtoon?.updated ?: "") }
     var notice by remember { mutableStateOf(webtoon?.notice ?: "") }
 
@@ -946,33 +1132,42 @@ fun AddEditWebtoonDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note (/20)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Note : ${note}/20")
+
+                    Slider(
+                        value = note,
+                        onValueChange = { note = it },
+                        valueRange = 0f..20f,
+                        steps = 79
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = nbEpVu,
-                    onValueChange = { nbEpVu = it },
-                    label = { Text("Épisodes vus") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NumberCounter(
+                        label = "Épisodes vus",
+                        value = nbEpVu,
+                        onValueChange = { nbEpVu = it },
+                        maxValue = nbEpTot,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = nbEpTot,
-                    onValueChange = { nbEpTot = it },
-                    label = { Text("Total Épisodes") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    NumberCounter(
+                        label = "Épisodes total",
+                        value = nbEpTot,
+                        onValueChange = {
+                            nbEpTot = it
+                            nbEpVu = nbEpVu.coerceAtMost(it)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -994,12 +1189,37 @@ fun AddEditWebtoonDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = updated,
-                    onValueChange = { updated = it },
-                    label = { Text("Statut mise à jour") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Statut mise à jour")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            OutlinedButton(
+                                onClick = { updated = status },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 4.dp
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (updated == status)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        Color.Transparent
+                                )
+                            ) {
+                                Text(
+                                    status,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -1026,15 +1246,15 @@ fun AddEditWebtoonDialog(
                                 id = webtoon?.id,
                                 titre = webtoon?.titre,
                                 auteur = auteur.sanitizeString(),
-                                note = note.toIntOrNull()?.takeIf { it > 0 },
+                                note = note.takeIf { it > 0f },
                                 type = type.sanitizeString(),
                                 genre = genre.sanitizeString(),
                                 updated = updated.sanitizeString(),
                                 etat = null,
                                 nb_vu = webtoon?.nb_vu,
-                                nb_ep_vu = nbEpVu.toIntOrNull()?.takeIf { it > 0 },
+                                nb_ep_vu = nbEpVu,
                                 nb_ep_res = null,
-                                nb_ep_tot = nbEpTot.toIntOrNull()?.takeIf { it > 0 },
+                                nb_ep_tot = nbEpTot,
                                 notice = notice.sanitizeString(),
                                 titre_principal = titrePrincipal.sanitizeString(),
                                 titre_secondaire = titreSecondaire.sanitizeString()
@@ -1059,11 +1279,11 @@ fun AddEditWattpadDialog(
     var titrePrincipal by remember { mutableStateOf(wattpad?.titre_principal ?: "") }
     var titreSecondaire by remember { mutableStateOf(wattpad?.titre_secondaire ?: "") }
     var auteur by remember { mutableStateOf(wattpad?.auteur ?: "") }
-    var note by remember { mutableStateOf(wattpad?.note?.toString() ?: "") }
+    var note by remember { mutableFloatStateOf(wattpad?.note ?: 0f) }
     var type by remember { mutableStateOf(wattpad?.type ?: "") }
     var genre by remember { mutableStateOf(wattpad?.genre ?: "") }
-    var nbEpVu by remember { mutableStateOf(wattpad?.nb_ep_vu?.toString() ?: "") }
-    var nbEpTot by remember { mutableStateOf(wattpad?.nb_ep_tot?.toString() ?: "") }
+    var nbEpVu by remember { mutableIntStateOf(wattpad?.nb_ep_vu ?: 0) }
+    var nbEpTot by remember { mutableIntStateOf(wattpad?.nb_ep_tot ?: 0) }
     var updated by remember { mutableStateOf(wattpad?.updated ?: "") }
     var notice by remember { mutableStateOf(wattpad?.notice ?: "") }
 
@@ -1114,33 +1334,42 @@ fun AddEditWattpadDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note (/20)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Note : ${note}/20")
+
+                    Slider(
+                        value = note,
+                        onValueChange = { note = it },
+                        valueRange = 0f..20f,
+                        steps = 79
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = nbEpVu,
-                    onValueChange = { nbEpVu = it },
-                    label = { Text("Chapitres vus") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NumberCounter(
+                        label = "Épisodes vus",
+                        value = nbEpVu,
+                        onValueChange = { nbEpVu = it },
+                        maxValue = nbEpTot,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = nbEpTot,
-                    onValueChange = { nbEpTot = it },
-                    label = { Text("Total Chapitres") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    NumberCounter(
+                        label = "Épisodes total",
+                        value = nbEpTot,
+                        onValueChange = {
+                            nbEpTot = it
+                            nbEpVu = nbEpVu.coerceAtMost(it)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -1162,12 +1391,37 @@ fun AddEditWattpadDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = updated,
-                    onValueChange = { updated = it },
-                    label = { Text("Statut mise à jour") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    Text("Statut mise à jour")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            OutlinedButton(
+                                onClick = { updated = status },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 4.dp
+                                ),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (updated == status)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        Color.Transparent
+                                )
+                            ) {
+                                Text(
+                                    status,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -1194,15 +1448,15 @@ fun AddEditWattpadDialog(
                                 id = wattpad?.id,
                                 titre = wattpad?.titre,
                                 auteur = auteur.sanitizeString(),
-                                note = note.toIntOrNull()?.takeIf { it > 0 },
+                                note = note.takeIf { it > 0f },
                                 type = type.sanitizeString(),
                                 genre = genre.sanitizeString(),
                                 updated = updated.sanitizeString(),
                                 etat = null,
                                 nb_vu = wattpad?.nb_vu,
-                                nb_ep_vu = nbEpVu.toIntOrNull()?.takeIf { it > 0 },
+                                nb_ep_vu = nbEpVu,
                                 nb_ep_res = null,
-                                nb_ep_tot = nbEpTot.toIntOrNull()?.takeIf { it > 0 },
+                                nb_ep_tot = nbEpTot,
                                 notice = notice.sanitizeString(),
                                 titre_principal = titrePrincipal.sanitizeString(),
                                 titre_secondaire = titreSecondaire.sanitizeString()

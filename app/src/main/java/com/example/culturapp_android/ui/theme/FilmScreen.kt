@@ -68,8 +68,8 @@ fun FilmScreen(
                 it.titre_principal ?: it.titre ?: ""
             }
 
-            FilmSortOption.NOTE_DESC -> film.sortedByDescending { it.note ?: 0 }
-            FilmSortOption.NOTE_ASC -> film.sortedBy { it.note ?: 0 }
+            FilmSortOption.NOTE_DESC -> film.sortedByDescending { it.note ?: 0f }
+            FilmSortOption.NOTE_ASC -> film.sortedBy { it.note ?: 0f }
         }
     }
 

@@ -11,7 +11,7 @@ data class Film(
 
     val titre: String?,
 
-    val note: Int?,
+    val note: Float?,
 
     val type: String?,
 

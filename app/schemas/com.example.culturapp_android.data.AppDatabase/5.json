@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 5,
-    "identityHash": "a7fa9f98e4db9a501284d3784aeb5203",
+    "identityHash": "679dae46572151aae5a8c30a2eb808a2",
     "entities": [
       {
         "tableName": "film",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `vo` TEXT, `cinema` INTEGER, `updated` TEXT, `etat` TEXT, `annee_vu` INTEGER, `nb_vu` INTEGER, `sortie` TEXT, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `note` REAL, `type` TEXT, `genre` TEXT, `vo` TEXT, `cinema` INTEGER, `updated` TEXT, `etat` TEXT, `annee_vu` INTEGER, `nb_vu` INTEGER, `sortie` TEXT, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -23,7 +23,7 @@
           {
             "fieldPath": "note",
             "columnName": "note",
-            "affinity": "INTEGER",
+            "affinity": "REAL",
             "notNull": false
           },
           {
@@ -128,7 +128,7 @@
       },
       {
         "tableName": "serie",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `vo` TEXT, `updated` TEXT, `etat` TEXT, `sortie` TEXT, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `priorite` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, `studio` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `note` REAL, `type` TEXT, `genre` TEXT, `vo` TEXT, `updated` TEXT, `etat` TEXT, `sortie` TEXT, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `priorite` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT, `studio` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -145,7 +145,7 @@
           {
             "fieldPath": "note",
             "columnName": "note",
-            "affinity": "INTEGER",
+            "affinity": "REAL",
             "notNull": false
           },
           {
@@ -250,7 +250,7 @@
       },
       {
         "tableName": "roman",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `possede` TEXT, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` REAL, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `possede` TEXT, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -273,7 +273,7 @@
           {
             "fieldPath": "note",
             "columnName": "note",
-            "affinity": "INTEGER",
+            "affinity": "REAL",
             "notNull": false
           },
           {
@@ -360,7 +360,7 @@
       },
       {
         "tableName": "manga",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `vo` TEXT, `genre` TEXT, `lu_suite` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `ep_deb` INTEGER, `ep_act` INTEGER, `nb_ep_res` INTEGER, `site` TEXT, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` REAL, `type` TEXT, `vo` TEXT, `genre` TEXT, `lu_suite` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `ep_deb` INTEGER, `ep_act` INTEGER, `nb_ep_res` INTEGER, `site` TEXT, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -383,7 +383,7 @@
           {
             "fieldPath": "note",
             "columnName": "note",
-            "affinity": "INTEGER",
+            "affinity": "REAL",
             "notNull": false
           },
           {
@@ -494,7 +494,7 @@
       },
       {
         "tableName": "webtoon",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` REAL, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -517,7 +517,7 @@
           {
             "fieldPath": "note",
             "columnName": "note",
-            "affinity": "INTEGER",
+            "affinity": "REAL",
             "notNull": false
           },
           {
@@ -598,7 +598,7 @@
       },
       {
         "tableName": "wattpad",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` INTEGER, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `titre` TEXT, `auteur` TEXT, `note` REAL, `type` TEXT, `genre` TEXT, `updated` TEXT, `etat` TEXT, `nb_vu` INTEGER, `nb_ep_res` INTEGER, `nb_ep_tot` INTEGER, `nb_ep_vu` INTEGER, `notice` TEXT, `titre_principal` TEXT, `titre_secondaire` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -621,7 +621,7 @@
           {
             "fieldPath": "note",
             "columnName": "note",
-            "affinity": "INTEGER",
+            "affinity": "REAL",
             "notNull": false
           },
           {
@@ -704,7 +704,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a7fa9f98e4db9a501284d3784aeb5203')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '679dae46572151aae5a8c30a2eb808a2')"
     ]
   }
 }

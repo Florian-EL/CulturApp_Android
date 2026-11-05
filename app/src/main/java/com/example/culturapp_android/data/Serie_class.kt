@@ -11,7 +11,7 @@ data class Serie(
 
     val titre: String?,
 
-    val note: Int?,
+    val note: Float?,
 
     val type: String?,
 

@@ -13,7 +13,7 @@ data class Manga(
 
     val auteur: String?,
 
-    val note: Int?,
+    val note: Float?,
 
     val type: String?,
 

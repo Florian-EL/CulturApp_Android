@@ -67,8 +67,8 @@ fun RomanScreen(
                 it.titre_principal ?: it.titre ?: ""
             }
 
-            RomanSortOption.NOTE_DESC -> roman.sortedByDescending { it.note ?: 0 }
-            RomanSortOption.NOTE_ASC -> roman.sortedBy { it.note ?: 0 }
+            RomanSortOption.NOTE_DESC -> roman.sortedByDescending { it.note ?: 0f }
+            RomanSortOption.NOTE_ASC -> roman.sortedBy { it.note ?: 0f }
         }
     }
 

@@ -68,8 +68,8 @@ fun SerieScreen(
                 it.titre_principal ?: it.titre ?: ""
             }
 
-            SerieSortOption.NOTE_DESC -> serie.sortedByDescending { it.note ?: 0 }
-            SerieSortOption.NOTE_ASC -> serie.sortedBy { it.note ?: 0 }
+            SerieSortOption.NOTE_DESC -> serie.sortedByDescending { it.note ?: 0f }
+            SerieSortOption.NOTE_ASC -> serie.sortedBy { it.note ?: 0f }
         }
     }
 

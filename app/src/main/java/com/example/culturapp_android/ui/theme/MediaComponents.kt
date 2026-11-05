@@ -123,10 +123,10 @@ fun getCoverImageFile(context: Context, id: Int?, titre: String?, dataType: Stri
 
 @Composable
 fun StarRating(
-    note: Int?,
+    note: Float?,
     modifier: Modifier = Modifier
 ) {
-    val rating5 = ((note ?: 0) / 4f).coerceIn(0f, 5f)
+    val rating5 = ((note ?: 0f) / 4f).coerceIn(0f, 5f)
 
     Row(
         modifier = modifier,
@@ -155,7 +155,7 @@ fun StarRating(
 fun MediaCard(
     title: String?,
     secondtitre: String?,
-    note: Int?,
+    note: Float?,
     nbEpVu: Int?,
     nbEpTot: Int?,
     coverFile: File?,

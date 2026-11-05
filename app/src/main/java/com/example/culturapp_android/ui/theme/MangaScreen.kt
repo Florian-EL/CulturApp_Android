@@ -67,8 +67,8 @@ fun MangaScreen(
                 it.titre_principal ?: it.titre ?: ""
             }
 
-            MangaSortOption.NOTE_DESC -> manga.sortedByDescending { it.note ?: 0 }
-            MangaSortOption.NOTE_ASC -> manga.sortedBy { it.note ?: 0 }
+            MangaSortOption.NOTE_DESC -> manga.sortedByDescending { it.note ?: 0f }
+            MangaSortOption.NOTE_ASC -> manga.sortedBy { it.note ?: 0f }
         }
     }
 

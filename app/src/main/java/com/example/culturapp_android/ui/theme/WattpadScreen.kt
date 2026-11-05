@@ -67,8 +67,8 @@ fun WattpadScreen(
                 it.titre_principal ?: it.titre ?: ""
             }
 
-            WattpadSortOption.NOTE_DESC -> wattpad.sortedByDescending { it.note ?: 0 }
-            WattpadSortOption.NOTE_ASC -> wattpad.sortedBy { it.note ?: 0 }
+            WattpadSortOption.NOTE_DESC -> wattpad.sortedByDescending { it.note ?: 0f }
+            WattpadSortOption.NOTE_ASC -> wattpad.sortedBy { it.note ?: 0f }
         }
     }
 
