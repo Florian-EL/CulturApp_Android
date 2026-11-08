@@ -14,7 +14,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "2.4.2"
+        versionName = "2.4.3"
     }
 
     compileOptions {
@@ -37,7 +37,7 @@ ksp {
 
 dependencies {
 
-    implementation(platform("androidx.compose:compose-bom:2025.12.00"))
+    implementation(platform("androidx.compose:compose-bom:2024.09.00"))
 
     implementation("androidx.core:core-ktx:1.15.0")
 
@@ -48,6 +48,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.compose.ui.text)
     implementation(libs.androidx.material3)
 

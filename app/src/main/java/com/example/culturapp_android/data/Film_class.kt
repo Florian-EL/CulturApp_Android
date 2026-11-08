@@ -19,13 +19,13 @@ data class Film(
 
     val vo: String?,
 
-    val cinema: Int?,
+    val cinema: String?,
 
     val updated: String?,
 
     val etat: String?,
 
-    val annee_vu: Int?,
+    val annee_vu: String?,
 
     val nb_vu: Int?,
 

@@ -65,7 +65,14 @@ object MediaCalculator {
             isSerieOrFilm = true
         )
 
-        var etat = if (film.note != null && film.note > 0) "FINI" else if (film.etat.isNullOrBlank()) "EN COURS" else film.etat!!
+        val sanitizedAnneeVu = sanitizeString(film.annee_vu)
+        val yearsList = sanitizedAnneeVu?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotBlank() }
+            ?: emptyList()
+
+        var etat =
+            if ((film.note != null && film.note > 0) || yearsList.isNotEmpty()) "FINI" else if (film.etat.isNullOrBlank()) "EN COURS" else film.etat!!
         var nbEpTot: Int? = film.nb_ep_tot
         var nbVu: Int? = film.nb_vu
         var nbEpVu: Int? = film.nb_ep_vu
@@ -82,7 +89,11 @@ object MediaCalculator {
         } else if (etat == "FINI") {
             nbEpVu = 1
             nbEpTot = 1
-            if (film.annee_vu != null) nbVu = 1
+            if (yearsList.isNotEmpty()) {
+                nbVu = yearsList.size
+            } else if (!sanitizedAnneeVu.isNullOrBlank()) {
+                nbVu = maxOf(nbVu ?: 0, 1)
+            }
         }
 
         val nbEpRes: Int? = if (nbEpTot != null && nbEpVu != null) nbEpTot - nbEpVu else null
@@ -98,6 +109,13 @@ object MediaCalculator {
             }
         }
 
+        if (yearsList.isNotEmpty()) {
+            etat = "FINI"
+            nbEpVu = 1
+            nbEpTot = 1
+            nbVu = yearsList.size
+        }
+
         return film.copy(
             titre = titre,
             titre_principal = titrePrincipal,
@@ -108,6 +126,7 @@ object MediaCalculator {
             vo = sanitizeString(film.vo),
             notice = sanitizeString(film.notice),
             sortie = sanitizeString(film.sortie),
+            annee_vu = sanitizedAnneeVu,
             etat = etat,
             updated = updated,
             nb_ep_tot = nbEpTot,

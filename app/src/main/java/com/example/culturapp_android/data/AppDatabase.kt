@@ -6,10 +6,10 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [Film::class, Serie::class, Roman::class, Manga::class, Webtoon::class, Wattpad::class],
-    version = 6,
+    version = 8,
     exportSchema = true,
     autoMigrations = [
-        AutoMigration(from = 5, to = 6)
+        AutoMigration(from = 7, to = 8)
     ]
 )
 
