@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -44,6 +45,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.culturapp_android.ui.theme.CitationScreen
 import com.example.culturapp_android.ui.theme.EntranceScreen
 import com.example.culturapp_android.ui.theme.FilmScreen
 import com.example.culturapp_android.ui.theme.MangaScreen
@@ -55,7 +57,7 @@ import com.example.culturapp_android.viewmodel.TypeViewModel
 import kotlinx.coroutines.launch
 
 enum class AppScreen {
-    HOME, FILMS, SERIES, ROMAN, MANGA, WEBTOON, WATTPAD
+    HOME, FILMS, SERIES, ROMAN, MANGA, WEBTOON, WATTPAD, CITATIONS
 }
 
 class MainActivity : ComponentActivity() {
@@ -152,6 +154,16 @@ class MainActivity : ComponentActivity() {
                         )
 
                         NavigationDrawerItem(
+                            label = { Text("Citations") },
+                            selected = currentScreen == AppScreen.CITATIONS,
+                            onClick = {
+                                currentScreen = AppScreen.CITATIONS
+                                scope.launch { drawerState.close() }
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+
+                        NavigationDrawerItem(
                             label = { Text("Films") },
                             selected = currentScreen == AppScreen.FILMS,
                             onClick = {
@@ -207,7 +219,6 @@ class MainActivity : ComponentActivity() {
                             },
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
-
                     }
                 }
             ) {
@@ -217,10 +228,13 @@ class MainActivity : ComponentActivity() {
                             title = {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier.clickable {
+                                        currentScreen = AppScreen.HOME
+                                    }
                                 ) {
                                     Text("CulturApp")
-                                    if (viewModel.isLoading || viewModel.isImagesLoading) {
+                                    if (viewModel.isLoading) {
                                         CircularProgressIndicator(
                                             modifier = Modifier.size(20.dp),
                                             strokeWidth = 2.dp
@@ -254,6 +268,8 @@ class MainActivity : ComponentActivity() {
                                 mangas = viewModel.mangas,
                                 webtoon = viewModel.webtoon,
                                 wattpad = viewModel.wattpad,
+                                citations = viewModel.citations,
+                                imagesVersion = viewModel.imagesVersion,
                                 onNavigateToScreen = { screen -> currentScreen = screen }
                             )
                             AppScreen.FILMS -> FilmScreen(
@@ -296,6 +312,19 @@ class MainActivity : ComponentActivity() {
                                 imagesVersion = viewModel.imagesVersion,
                                 onSaveWattpad = { viewModel.saveWattpad(it) },
                                 onDeleteWattpad = { viewModel.deleteWattpad(it) }
+                            )
+
+                            AppScreen.CITATIONS -> CitationScreen(
+                                citations = viewModel.citations,
+                                films = viewModel.films,
+                                series = viewModel.series,
+                                romans = viewModel.romans,
+                                mangas = viewModel.mangas,
+                                webtoons = viewModel.webtoon,
+                                wattpads = viewModel.wattpad,
+                                imagesVersion = viewModel.imagesVersion,
+                                onSaveCitation = { viewModel.saveCitation(it) },
+                                onDeleteCitation = { viewModel.deleteCitation(it) }
                             )
                         }
                     }

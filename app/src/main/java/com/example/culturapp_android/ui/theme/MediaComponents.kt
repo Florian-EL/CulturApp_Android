@@ -45,6 +45,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.culturapp_android.data.Film
+import com.example.culturapp_android.data.Manga
+import com.example.culturapp_android.data.Roman
+import com.example.culturapp_android.data.Serie
+import com.example.culturapp_android.data.Wattpad
+import com.example.culturapp_android.data.Webtoon
 import java.io.File
 
 fun getCoverImageFile(context: Context, id: Int?, titre: String?, dataType: String?): File? {
@@ -75,14 +81,20 @@ fun getCoverImageFile(context: Context, id: Int?, titre: String?, dataType: Stri
 
     if (!titre.isNullOrBlank()) {
         val safeTitle = titre.replace(Regex(":"), "_")
-        val imageName = "${safeTitle}_${dataType}"
+        val allSupports = listOf("film", "serie", "roman", "manga", "webtoon", "wattpad")
+        val supportsToTest = (listOfNotNull(dataType) + allSupports).distinct()
 
-        Log.d("CoverDebug", "Trying image name with dataType: $imageName")
-        for (ext in extensions) {
-            val file = File(dbDir, "$imageName.$ext")
-            if (file.exists() && file.isFile) {
-                Log.d("CoverDebug", "Found cover by titre_dataType: ${file.absolutePath}")
-                return file
+        for (type in supportsToTest) {
+            val imageName = "${safeTitle}_${type}"
+            for (ext in extensions) {
+                val file = File(dbDir, "$imageName.$ext")
+                if (file.exists() && file.isFile) {
+                    Log.d(
+                        "CoverDebug",
+                        "Found cover by titre_dataType ($type): ${file.absolutePath}"
+                    )
+                    return file
+                }
             }
         }
 
@@ -93,17 +105,21 @@ fun getCoverImageFile(context: Context, id: Int?, titre: String?, dataType: Stri
                 Log.d("CoverDebug", "Found cover by titre alone: ${file.absolutePath}")
                 return file
             }
+            val safeFile = File(dbDir, "$safeTitle.$ext")
+            if (safeFile.exists() && safeFile.isFile) {
+                Log.d("CoverDebug", "Found cover by safeTitle alone: ${safeFile.absolutePath}")
+                return safeFile
+            }
         }
 
         // Case-insensitive fallback check across files in dbDir
+        val candidateNames = supportsToTest.map { "${safeTitle}_${it}" } + titre + safeTitle
         val matchedFile = dbDir.listFiles()?.find { f ->
             val nameNoExt = f.nameWithoutExtension
             val ext = f.extension
-            extensions.contains(ext) && (
-                    nameNoExt.equals(imageName, ignoreCase = true) ||
-                            nameNoExt.equals(titre, ignoreCase = true) ||
-                            nameNoExt.equals(safeTitle, ignoreCase = true)
-                    )
+            extensions.contains(ext) && candidateNames.any { candidate ->
+                nameNoExt.equals(candidate, ignoreCase = true)
+            }
         }
         if (matchedFile != null) {
             Log.d(
@@ -118,6 +134,100 @@ fun getCoverImageFile(context: Context, id: Int?, titre: String?, dataType: Stri
         "CoverDebug",
         "Cover NOT found for id=$id, titre=$titre, dataType=$dataType. Available files in dir: $allFiles"
     )
+    return null
+}
+
+fun findCoverImageForOeuvre(
+    context: Context,
+    oeuvre: String?,
+    films: List<Film> = emptyList(),
+    series: List<Serie> = emptyList(),
+    romans: List<Roman> = emptyList(),
+    mangas: List<Manga> = emptyList(),
+    webtoons: List<Webtoon> = emptyList(),
+    wattpads: List<Wattpad> = emptyList()
+): File? {
+    if (oeuvre.isNullOrBlank()) return null
+
+    // 1. Try direct search by title
+    val directFile = getCoverImageFile(context, null, oeuvre, null)
+    if (directFile != null && directFile.exists()) {
+        return directFile
+    }
+
+    // 2. Search in media collections in support order: Film, Serie, Roman, Manga, Webtoon, Wattpad
+    val cleanOeuvre = oeuvre.trim()
+
+    fun matches(titrePrincipal: String?, titre: String?): Boolean {
+        val tp = titrePrincipal?.trim()
+        val t = titre?.trim()
+        if (!tp.isNullOrEmpty()) {
+            if (tp.equals(cleanOeuvre, ignoreCase = true)) return true
+            if (cleanOeuvre.equals(tp, ignoreCase = true)) return true
+            if (tp.startsWith(cleanOeuvre, ignoreCase = true)) return true
+            if (cleanOeuvre.startsWith(tp, ignoreCase = true)) return true
+        }
+        if (!t.isNullOrEmpty()) {
+            if (t.equals(cleanOeuvre, ignoreCase = true)) return true
+            if (t.startsWith(cleanOeuvre, ignoreCase = true)) return true
+        }
+        return false
+    }
+
+    // Films
+    for (item in films) {
+        if (matches(item.titre_principal, item.titre)) {
+            val file =
+                getCoverImageFile(context, item.id, item.titre ?: item.titre_principal, "film")
+            if (file != null && file.exists()) return file
+        }
+    }
+
+    // Series
+    for (item in series) {
+        if (matches(item.titre_principal, item.titre)) {
+            val file =
+                getCoverImageFile(context, item.id, item.titre ?: item.titre_principal, "serie")
+            if (file != null && file.exists()) return file
+        }
+    }
+
+    // Romans
+    for (item in romans) {
+        if (matches(item.titre_principal, item.titre)) {
+            val file =
+                getCoverImageFile(context, item.id, item.titre ?: item.titre_principal, "roman")
+            if (file != null && file.exists()) return file
+        }
+    }
+
+    // Mangas
+    for (item in mangas) {
+        if (matches(item.titre_principal, item.titre)) {
+            val file =
+                getCoverImageFile(context, item.id, item.titre ?: item.titre_principal, "manga")
+            if (file != null && file.exists()) return file
+        }
+    }
+
+    // Webtoons
+    for (item in webtoons) {
+        if (matches(item.titre_principal, item.titre)) {
+            val file =
+                getCoverImageFile(context, item.id, item.titre ?: item.titre_principal, "webtoon")
+            if (file != null && file.exists()) return file
+        }
+    }
+
+    // Wattpads
+    for (item in wattpads) {
+        if (matches(item.titre_principal, item.titre)) {
+            val file =
+                getCoverImageFile(context, item.id, item.titre ?: item.titre_principal, "wattpad")
+            if (file != null && file.exists()) return file
+        }
+    }
+
     return null
 }
 

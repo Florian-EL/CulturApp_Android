@@ -17,6 +17,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.culturapp_android.data.AppDatabase
+import com.example.culturapp_android.data.Citation
 import com.example.culturapp_android.data.Film
 import com.example.culturapp_android.data.LibraryRepository
 import com.example.culturapp_android.data.Manga
@@ -53,6 +54,7 @@ class TypeViewModel(
             database.mangadaos(),
             database.webtoondaos(),
             database.wattpaddaos(),
+            database.citationdaos(),
         )
 
     private fun reopenLocalDatabase(context: Context) {
@@ -78,6 +80,7 @@ class TypeViewModel(
             database.mangadaos(),
             database.webtoondaos(),
             database.wattpaddaos(),
+            database.citationdaos(),
         )
     }
 
@@ -97,6 +100,9 @@ class TypeViewModel(
         private set
 
     var wattpad by mutableStateOf<List<Wattpad>>(emptyList())
+        private set
+
+    var citations by mutableStateOf<List<Citation>>(emptyList())
         private set
 
     var statusMessage by mutableStateOf<String?>(null)
@@ -160,6 +166,7 @@ class TypeViewModel(
             val m = withContext(Dispatchers.IO) { libraryRepository.getManga() }
             val w = withContext(Dispatchers.IO) { libraryRepository.getWebtoon() }
             val wt = withContext(Dispatchers.IO) { libraryRepository.getWattpad() }
+            val c = withContext(Dispatchers.IO) { libraryRepository.getCitation() }
 
             withContext(Dispatchers.Main) {
                 films = f
@@ -168,10 +175,11 @@ class TypeViewModel(
                 mangas = m
                 webtoon = w
                 wattpad = wt
+                citations = c
             }
             Log.i(
                 "TypeViewModel",
-                "Data loaded: Films=${f.size}, Series=${s.size}, Romans=${r.size}, Mangas=${m.size}, Webtoon=${w.size}, Wattpad=${wt.size}"
+                "Data loaded: Films=${f.size}, Series=${s.size}, Romans=${r.size}, Mangas=${m.size}, Webtoon=${w.size}, Wattpad=${wt.size}, Citations=${c.size}"
             )
         } catch (e: Exception) {
             Log.e("TypeViewModel", "Error loading data from repository", e)
@@ -255,6 +263,17 @@ class TypeViewModel(
                 wattpad = withContext(Dispatchers.IO) { libraryRepository.getWattpad() }
             } catch (e: Exception) {
                 wattpad = emptyList()
+                setStatus(e.toString(), true)
+            }
+        }
+    }
+
+    fun loadCitation() {
+        viewModelScope.launch {
+            try {
+                citations = withContext(Dispatchers.IO) { libraryRepository.getCitation() }
+            } catch (e: Exception) {
+                citations = emptyList()
                 setStatus(e.toString(), true)
             }
         }
@@ -361,6 +380,36 @@ class TypeViewModel(
                 loadFilm()
             } catch (e: Exception) {
                 Log.e("TypeViewModel", "Error deleting film", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de la suppression : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun saveCitation(citation: Citation) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.saveCitation(citation)
+                exportDatabaseToSavedFolder()
+                loadCitation()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error saving citation", e)
+                withContext(Dispatchers.Main) {
+                    setStatus("Erreur lors de l'enregistrement de la citation : ${e.message}", true)
+                }
+            }
+        }
+    }
+
+    fun deleteCitation(citation: Citation) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                libraryRepository.deleteCitation(citation)
+                exportDatabaseToSavedFolder()
+                loadCitation()
+            } catch (e: Exception) {
+                Log.e("TypeViewModel", "Error deleting citation", e)
                 withContext(Dispatchers.Main) {
                     setStatus("Erreur lors de la suppression : ${e.message}", true)
                 }

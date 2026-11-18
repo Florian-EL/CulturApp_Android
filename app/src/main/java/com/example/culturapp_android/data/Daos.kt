@@ -102,3 +102,19 @@ interface WattpadDao {
     @Delete
     suspend fun deleteWattpad(wattpad: Wattpad)
 }
+
+@Dao
+interface CitationDao {
+
+    @Query("SELECT * FROM citation")
+    suspend fun getCitation(): List<Citation>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCitation(citation: Citation): Long
+
+    @Update
+    suspend fun updateCitation(citation: Citation)
+
+    @Delete
+    suspend fun deleteCitation(citation: Citation)
+}

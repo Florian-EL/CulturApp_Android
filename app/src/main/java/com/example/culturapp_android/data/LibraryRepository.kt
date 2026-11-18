@@ -7,6 +7,7 @@ class LibraryRepository(
     private val mangaDao: MangaDao,
     private val webtoonDao: WebtoonDao,
     private val wattpadDao: WattpadDao,
+    private val citationDao: CitationDao,
 ) {
 
     suspend fun getFilm(): List<Film> = filmDao.getFilm()
@@ -15,6 +16,7 @@ class LibraryRepository(
     suspend fun getManga(): List<Manga> = mangaDao.getManga()
     suspend fun getWebtoon(): List<Webtoon> = webtoonDao.getWebtoon()
     suspend fun getWattpad(): List<Wattpad> = wattpadDao.getWattpad()
+    suspend fun getCitation(): List<Citation> = citationDao.getCitation()
 
     suspend fun saveFilm(film: Film): Long {
         val calculated = MediaCalculator.calculateFilm(film)
@@ -46,10 +48,15 @@ class LibraryRepository(
         return wattpadDao.insertWattpad(calculated)
     }
 
+    suspend fun saveCitation(citation: Citation): Long {
+        return citationDao.insertCitation(citation)
+    }
+
     suspend fun deleteFilm(film: Film) = filmDao.deleteFilm(film)
     suspend fun deleteSerie(serie: Serie) = serieDao.deleteSerie(serie)
     suspend fun deleteRoman(roman: Roman) = romanDao.deleteRoman(roman)
     suspend fun deleteManga(manga: Manga) = mangaDao.deleteManga(manga)
     suspend fun deleteWebtoon(webtoon: Webtoon) = webtoonDao.deleteWebtoon(webtoon)
     suspend fun deleteWattpad(wattpad: Wattpad) = wattpadDao.deleteWattpad(wattpad)
+    suspend fun deleteCitation(citation: Citation) = citationDao.deleteCitation(citation)
 }
