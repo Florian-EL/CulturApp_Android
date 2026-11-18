@@ -61,7 +61,7 @@ fun FilmScreen(
     val sortedUsers = remember(film, sortOption) {
         when (sortOption) {
             FilmSortOption.INIT -> film.sortedWith(
-                compareByDescending<Film> { it.updated ?: "" }.thenBy { it.etat }
+                compareBy<Film> { it.etat ?: "" }.thenBy { it.updated }
                     .thenBy { it.titre })
             FilmSortOption.TITLE_ASC -> film.sortedBy { it.titre_principal ?: it.titre ?: "" }
             FilmSortOption.TITLE_DESC -> film.sortedByDescending {

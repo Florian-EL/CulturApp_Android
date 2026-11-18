@@ -497,7 +497,7 @@ fun AddEditFilmDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            listOf("PAS SORTI", "EN COURS", "SORTI").forEach { status ->
                                 OutlinedButton(
                                     onClick = { updated = status },
                                     modifier = Modifier.weight(1f),
@@ -738,7 +738,7 @@ fun AddEditMangaDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            listOf("PAS SORTI", "EN COURS", "SORTI").forEach { status ->
                                 OutlinedButton(
                                     onClick = { updated = status },
                                     modifier = Modifier.weight(1f),
@@ -970,7 +970,7 @@ fun AddEditSerieDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            listOf("PAS SORTI", "EN COURS", "SORTI").forEach { status ->
                                 OutlinedButton(
                                     onClick = { updated = status },
                                     modifier = Modifier.weight(1f),
@@ -1222,7 +1222,7 @@ fun AddEditRomanDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            listOf("PAS SORTI", "EN COURS", "SORTI").forEach { status ->
                                 OutlinedButton(
                                     onClick = { updated = status },
                                     modifier = Modifier.weight(1f),
@@ -1429,7 +1429,7 @@ fun AddEditWebtoonDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            listOf("PAS SORTI", "EN COURS", "SORTI").forEach { status ->
                                 OutlinedButton(
                                     onClick = { updated = status },
                                     modifier = Modifier.weight(1f),
@@ -1635,7 +1635,7 @@ fun AddEditWattpadDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf("PAS SORTI", "EN COURS", "FINI").forEach { status ->
+                            listOf("PAS SORTI", "EN COURS", "SORTI").forEach { status ->
                                 OutlinedButton(
                                     onClick = { updated = status },
                                     modifier = Modifier.weight(1f),

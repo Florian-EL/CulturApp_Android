@@ -104,6 +104,8 @@ object MediaCalculator {
         } else if (nbEpTot != null && nbEpVu != null) {
             if (nbEpTot > nbEpVu) {
                 etat = "EN COURS"
+            } else if (nbEpTot == 0) {
+                etat = "A VENIR"
             } else if (nbEpTot == nbEpVu) {
                 etat = "FINI"
             }
@@ -162,6 +164,8 @@ object MediaCalculator {
         } else if (nbEpTot != null && nbEpVu != null) {
             if (nbEpTot > nbEpVu) {
                 etat = "EN COURS"
+            } else if (nbEpTot == 0) {
+                etat = "A VENIR"
             } else if (nbEpTot == nbEpVu) {
                 etat = "FINI"
             }
@@ -215,6 +219,8 @@ object MediaCalculator {
         } else if (nbEpTot != null && nbEpVu != null) {
             if (nbEpTot > nbEpVu) {
                 etat = "EN COURS"
+            } else if (nbEpTot == 0) {
+                etat = "A VENIR"
             } else if (nbEpTot == nbEpVu) {
                 etat = "FINI"
             }
@@ -258,6 +264,8 @@ object MediaCalculator {
         } else if (nbEpTot != null && nbEpVu != null) {
             if (nbEpTot > nbEpVu) {
                 etat = "EN COURS"
+            } else if (nbEpTot == 0) {
+                etat = "A VENIR"
             } else if (nbEpTot == nbEpVu) {
                 etat = "FINI"
             }
@@ -301,6 +309,8 @@ object MediaCalculator {
         } else if (nbEpTot != null && nbEpVu != null) {
             if (nbEpTot > nbEpVu) {
                 etat = "EN COURS"
+            } else if (nbEpTot == 0) {
+                etat = "A VENIR"
             } else if (nbEpTot == nbEpVu) {
                 etat = "FINI"
             }
@@ -343,6 +353,8 @@ object MediaCalculator {
         } else if (nbEpTot != null && nbEpVu != null) {
             if (nbEpTot > nbEpVu) {
                 etat = "EN COURS"
+            } else if (nbEpTot == 0) {
+                etat = "A VENIR"
             } else if (nbEpTot == nbEpVu) {
                 etat = "FINI"
             }
