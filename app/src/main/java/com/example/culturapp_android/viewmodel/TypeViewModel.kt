@@ -2,6 +2,7 @@ package com.example.culturapp_android.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Environment
@@ -287,6 +288,14 @@ class TypeViewModel(
         val prefs = context.getSharedPreferences("culturapp_prefs", Context.MODE_PRIVATE)
         val savedUriStr = prefs.getString("saved_db_folder_uri", null) ?: return@withContext
         val folderUri = Uri.parse(savedUriStr)
+
+        try {
+            val takeFlags =
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            context.contentResolver.takePersistableUriPermission(folderUri, takeFlags)
+        } catch (e: Exception) {
+            Log.w("TypeViewModel", "Could not refresh persistable URI permission for export", e)
+        }
 
         try {
             database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)").close()
@@ -871,6 +880,14 @@ class TypeViewModel(
     private suspend fun loadDatabaseFromFolderInternal(folderUri: Uri) =
         withContext(Dispatchers.IO) {
             val context = getApplication<Application>()
+
+            try {
+                val takeFlags =
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                context.contentResolver.takePersistableUriPermission(folderUri, takeFlags)
+            } catch (e: Exception) {
+                Log.w("TypeViewModel", "Could not refresh persistable URI permission for import", e)
+            }
 
             // First, purge and clear all database cache completely before loading
             clearDatabaseCache(context)

@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,14 +86,42 @@ class MainActivity : ComponentActivity() {
             var currentScreen by remember { mutableStateOf(AppScreen.HOME) }
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
             val scope = rememberCoroutineScope()
+
+            val permissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestMultiplePermissions()
+            ) { permissions ->
+                val allGranted = permissions.entries.all { it.value }
+                if (!allGranted) {
+                    android.util.Log.w(
+                        "MainActivity",
+                        "Certaines permissions de stockage n'ont pas été accordées."
+                    )
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                val permissionsToRequest = mutableListOf<String>()
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    permissionsToRequest.add(android.Manifest.permission.READ_MEDIA_IMAGES)
+                } else {
+                    permissionsToRequest.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                    if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.Q) {
+                        permissionsToRequest.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    }
+                }
+                permissionLauncher.launch(permissionsToRequest.toTypedArray())
+            }
+
             val launcher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.OpenDocumentTree()
             ) { uri ->
                 uri?.let {
                     try {
+                        val takeFlags =
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                         contentResolver.takePersistableUriPermission(
                             it,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            takeFlags
                         )
                     } catch (e: Exception) {
                         android.util.Log.e("MainActivity", "Failed to persist folder permission", e)
